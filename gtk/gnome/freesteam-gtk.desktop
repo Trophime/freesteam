@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Name=freesteam
+GenericName=freesteam
+Comment=Calculate properties of water and steam (interactive GTK+ GUI)
+TryExec=freesteam-gtk
+Exec=freesteam-gtk
+StartupNotify=true
+Terminal=false
+Type=Application
+Icon=freesteam-gtk-app
+Categories=Education;Science;Math;Physics;Engineering;
+GenericName[en_AU]=freesteam
+

@@ -1,0 +1,64 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ freesteam (2.2-7) unstable; urgency=medium
+ .
+   * d/patches: add support for cmake
+   * d/control: move to cmake
+Author: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2019-04-17
+
+Index: freesteam-2.2/CMakeLists.txt
+===================================================================
+--- freesteam-2.2.orig/CMakeLists.txt
++++ freesteam-2.2/CMakeLists.txt
+@@ -30,11 +30,9 @@ include_directories(${CMAKE_CURRENT_SOUR
+ # find_package(ascend)
+ 
+ add_library( freesteam SHARED ${SRCS} )
+-target_link_libraries( freesteam ${GSL_LIBRARIES})
++target_link_libraries( freesteam m ${GSL_LIBRARIES})
+ set_target_properties( freesteam PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 2.2 )
+ 
+-install( TARGETS freesteam DESTINATION lib )
+-install( FILES ${HEADERS} DESTINATION include/freesteam )
+ 
+ 
+ if (FREESTEAM_ENABLE_PYTHON)
+@@ -49,11 +47,17 @@ if (FREESTEAM_ENABLE_PYTHON)
+ endif()
+ 
+ if (BUILD_TESTING)
+-  add_executable( test test.c )
+-  target_link_libraries( test  freesteam ${GSL_LIBRARIES})
+-  add_test(basic test)
++  add_executable( mytest test.c )
++  target_link_libraries( mytest  freesteam ${GSL_LIBRARIES})
++
++  enable_testing()
++  add_test(basic ${CMAKE_BINARY_DIR}/mytest)
+ endif()
+   
+ if (FREESTEAM_EXAMPLES)
+   add_subdirectory(examples)
+ endif()
++
++# install
++install( TARGETS freesteam DESTINATION ${INSTALL_LIB_DIR} ) #lib
++install( FILES ${HEADERS} DESTINATION include/freesteam )

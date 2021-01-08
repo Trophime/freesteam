@@ -1,0 +1,16 @@
+<RCC>
+  <qresource prefix="button">
+    <file>exit.png</file>
+    <file>AboutQt.png</file>
+    <file>filesave.png</file>
+    <file>line.png</file>
+    <file>dot.png</file>
+    <file>line-dot.png</file>
+    <file>dash.png</file>
+    <file>steamTables.png</file>
+    <file>configure.png</file>
+    <file>calculate.png</file>
+    <file>help.png</file>
+    <file>remove.png</file>
+  </qresource>
+</RCC>

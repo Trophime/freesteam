@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="2.16"/>
+  <!-- interface-naming-policy project-wide -->
+  <object class="GtkAction" id="action1"/>
+  <object class="GtkAboutDialog" id="aboutdialog">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">About freesteam</property>
+    <property name="type_hint">normal</property>
+    <property name="program_name">freesteam</property>
+    <property name="version">2.1</property>
+    <property name="copyright" translatable="yes">Copyright © 2010 Carlo Tegano
+© 2012-2013 John Pye</property>
+    <property name="comments" translatable="yes">Calculate steam properties according to IAPWS-IF97 correlations</property>
+    <property name="website">http://freesteam.sourceforge.net/</property>
+    <property name="website_label" translatable="yes">freesteam website</property>
+    <property name="license" translatable="yes">This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</property>
+    <property name="authors">John Pye &lt;john@curioussymbols.com&gt;
+Carlo Tegano &lt;carlotorres95@gmail.com&gt;
+</property>
+    <property name="logo">icon.png</property>
+    <signal name="response" handler="on_aboutdialog_response" swapped="no"/>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="events">GDK_BUTTON_PRESS_MASK</property>
+            <property name="layout_style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkListStore" id="indep_vars_saturation_liststore">
+    <columns>
+      <!-- column-name IndVarsSaturation -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">(T,x)  Temperature, quality</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">(p,x)  Pressure, quality (backward)</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="indep_vars_single_phase_liststore">
+    <columns>
+      <!-- column-name IndVarsColumn -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">(p,T)  Pressure, temperature</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">(p,h)  Pressure, enthalpy (backward eqn)</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">(p,s)  Pressure, entropy (backword eqn)</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">(p,u)  Pressure, internal energy (iterative)</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">(T,s)  Temperature, entropy (iterative)</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="liststore">
+    <columns>
+      <!-- column-name property -->
+      <column type="gchararray"/>
+      <!-- column-name units -->
+      <column type="gchararray"/>
+      <!-- column-name liquid -->
+      <column type="gdouble"/>
+      <!-- column-name mixed -->
+      <column type="gdouble"/>
+      <!-- column-name vapour -->
+      <column type="gdouble"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Pressure</col>
+        <col id="1" translatable="yes">p / bar</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Temperature</col>
+        <col id="1" translatable="yes">T / °C</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Enthalpy</col>
+        <col id="1" translatable="yes">h / [kJ/kg]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Entropy</col>
+        <col id="1" translatable="yes">s / [kJ/kgK]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Internal Energy</col>
+        <col id="1" translatable="yes">u / [kJ/kg]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Specific Volume</col>
+        <col id="1" translatable="yes">v / [m³/kg]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Density</col>
+        <col id="1" translatable="yes">ρ / [kg/m³]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Isobaric heat capacity</col>
+        <col id="1" translatable="yes">cp / [kJ/kg·K]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Isochoric heat capacity</col>
+        <col id="1" translatable="yes">cv / [kJ/kg·K]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Quality</col>
+        <col id="1" translatable="yes">x</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Thermal conductivity</col>
+        <col id="1" translatable="yes">k / [W/m·K]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Viscosity</col>
+        <col id="1" translatable="yes">mu / [Pa·s]</col>
+        <col id="2">0</col>
+        <col id="3">0</col>
+        <col id="4">0</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkListStore" id="solver_classes_liststore">
+    <columns>
+      <!-- column-name Solver -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Any state</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Saturated state</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkWindow" id="window">
+    <property name="can_focus">False</property>
+    <property name="title">freesteam 2.1</property>
+    <property name="icon">icon.png</property>
+    <signal name="destroy" handler="on_window_destroy" swapped="no"/>
+    <child>
+      <object class="GtkVBox" id="vbox1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="spacing">8</property>
+        <child>
+          <object class="GtkMenuBar" id="menubar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkMenuItem" id="filemenu">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">_File</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="menu1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem5">
+                        <property name="label">gtk-quit</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_quit_activate" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuItem" id="helpmenu">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_action_appearance">False</property>
+                <property name="label" translatable="yes">_Help</property>
+                <property name="use_underline">True</property>
+                <child type="submenu">
+                  <object class="GtkMenu" id="menu3">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="imagemenuitem10">
+                        <property name="label">gtk-about</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_about_activate" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkTable" id="solver_setup_table">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="n_rows">2</property>
+            <property name="n_columns">2</property>
+            <property name="row_spacing">2</property>
+            <child>
+              <object class="GtkLabel" id="title_combo_solver_class">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Solving for...</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="title_combo_ind_vars">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">...with independent properties</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBox" id="solver_class_combo">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="model">solver_classes_liststore</property>
+                <property name="active">0</property>
+                <signal name="changed" handler="on_solver_class_changed" swapped="no"/>
+                <child>
+                  <object class="GtkCellRendererText" id="solver_class_renderer"/>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                  </attributes>
+                </child>
+              </object>
+              <packing>
+                <property name="top_attach">1</property>
+                <property name="bottom_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBox" id="indep_variables_combo">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="model">indep_vars_single_phase_liststore</property>
+                <property name="active">0</property>
+                <signal name="changed" handler="on_indep_variables_combo_changed" swapped="no"/>
+                <child>
+                  <object class="GtkCellRendererText" id="indep_vars_renderer"/>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                  </attributes>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+                <property name="top_attach">1</property>
+                <property name="bottom_attach">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="input_table">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">8</property>
+            <child>
+              <object class="GtkLabel" id="indep_var1_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Pressure [bar(a)]: </property>
+                <property name="justify">right</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="indep_var1_entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">●</property>
+                <property name="primary_icon_activatable">False</property>
+                <property name="secondary_icon_activatable">False</property>
+                <property name="primary_icon_sensitive">True</property>
+                <property name="secondary_icon_sensitive">True</property>
+                <signal name="changed" handler="on_indep_var1_entry_editing_done" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="indep_var2_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Temperature [°C]: </property>
+                <property name="justify">right</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="indep_var2_entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">●</property>
+                <property name="primary_icon_activatable">False</property>
+                <property name="secondary_icon_activatable">False</property>
+                <property name="primary_icon_sensitive">True</property>
+                <property name="secondary_icon_sensitive">True</property>
+                <signal name="changed" handler="on_indep_var2_entry_editing_done" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkTreeView" id="data_table">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="model">liststore</property>
+            <property name="headers_clickable">False</property>
+            <property name="search_column">0</property>
+            <property name="enable_grid_lines">both</property>
+            <child>
+              <object class="GtkTreeViewColumn" id="property">
+                <property name="title">Property</property>
+                <child>
+                  <object class="GtkCellRendererText" id="renderer_property"/>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkTreeViewColumn" id="units">
+                <property name="title">Units</property>
+                <child>
+                  <object class="GtkCellRendererText" id="renderer_units"/>
+                  <attributes>
+                    <attribute name="text">1</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkTreeViewColumn" id="liquid">
+                <property name="title">Liquid Phase</property>
+                <property name="expand">True</property>
+                <child>
+                  <object class="GtkCellRendererText" id="renderer_liquid"/>
+                  <attributes>
+                    <attribute name="text">2</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkTreeViewColumn" id="mixed">
+                <property name="title">Mixed Phase</property>
+                <property name="expand">True</property>
+                <child>
+                  <object class="GtkCellRendererText" id="renderer_mixed">
+                    <property name="editable">True</property>
+                  </object>
+                  <attributes>
+                    <attribute name="text">3</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkTreeViewColumn" id="vapour">
+                <property name="title">Vapour Phase</property>
+                <property name="expand">True</property>
+                <child>
+                  <object class="GtkCellRendererText" id="renderer_vapour">
+                    <property name="editable">True</property>
+                  </object>
+                  <attributes>
+                    <attribute name="text">4</attribute>
+                  </attributes>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkStatusbar" id="statusbar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">2</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">4</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

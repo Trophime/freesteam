@@ -1,0 +1,5 @@
+usr/include/freesteam
+usr/lib/*/libfreesteam*.so
+#usr/lib/pkgconfig/*.pc
+#usr/bin/freesteam-config
+#usr/share/freesteam/examples

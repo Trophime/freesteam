@@ -1,0 +1,160 @@
+[Isobar]
+linewidth = 0.3
+end = 20000000.0
+color = #0000ff
+list = 1000.0,2000.0,5000.0,1.0000e+04,2.0000e+04,5.0000e+04,1.0000e+05,2.0000e+05,5.0000e+05,1.0000e+06,2.0000e+06,5.0000e+06,1.0000e+07,2.0000e+07,5.0000e+07
+critic = False
+custom = True
+start = 100000.0
+step = 1000000.0
+position = 36
+units = True
+label = True
+linestyle = 0
+
+[Isoentropic]
+linewidth = 0.3
+end = 10000.0
+color = #ff0000
+list = 
+critic = False
+custom = False
+start = 500.0
+step = 500.0
+position = 52
+units = False
+label = True
+linestyle = 2
+
+[Tooltip]
+tension = [0]
+temperature = [0, 1, 2, 3]
+density = [0, 4]
+viscosity = [0, 4]
+enthalpy = [1, 4, 6]
+specificvolume = [0]
+pressure = [7, 9, 17]
+specificheat = [0]
+entropy = [0]
+thermalconductivity = [0, 7]
+speed = [0]
+
+[General]
+toolbar = False
+plot = True
+isobar = True
+isoentropic = True
+delta = True
+isotherm = True
+2d = True
+points = True
+fontsize = small
+colorresaltado = #ffff00
+isochor = False
+isoenthalpic = False
+isoquality = True
+colorreadonly = #dddddd
+dpi = 80
+sat = True
+
+[2D]
+xvariable = u
+yvariable = v
+ymax = 40.0
+yscale = True
+xscale = False
+grid = False
+xmax = 3500000.0
+xmin = 100000.0
+ymin = 0.001
+
+[Units]
+temperature = 0
+density = 0
+viscosity = 0
+enthalpy = 1
+specificvolume = 0
+pressure = 4
+specificheat = 1
+entropy = 1
+thermalconductivity = 0
+speed = 0
+
+[Points]
+1 = 1,800.0,5000000.0
+0 = 1,500.0,5000000.0
+3 = 0,600.0,0.5
+2 = 1,700.0,49999996.2336
+5 = 0,600.0,0.1
+4 = 0,600.0,0.3
+7 = 1,400.0,5000000.0
+6 = 1,750.0,5000000.0
+variable = 5
+8 = 1,450.0,15000000.0
+
+[Isochor]
+linewidth = 0.5
+end = 3.89714035252
+color = #007900
+list = 1.0000e-04,0.0002,0.0005,0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.5,1.0,2.0,5.0,10.0,20.0,50.0,100.0,200.0
+critic = True
+custom = True
+start = 1.16917581685
+step = 0.155888860355
+position = 69
+units = True
+label = True
+linestyle = 1
+
+[Isoenthalpic]
+linewidth = 1.0
+end = 6000000.0
+color = #aa0000
+list = 5.0000e+05,6.0000e+06
+critic = True
+custom = False
+start = 200000.0
+step = 200000.0
+position = 75
+units = True
+label = True
+linestyle = 3
+
+[Isoquality]
+linewidth = 1.0
+end = 0.99
+color = #000000
+list = 0.8
+critic = 0
+custom = False
+start = 0.05
+step = 0.05
+position = 64
+units = True
+label = True
+linestyle = 3
+
+[Table]
+x_start = 1
+x_step = 10
+calculate = 2
+x_end = 500
+y_end = 800
+y_start = 300
+y_step = 10
+axis = 0
+
+[Isotherm]
+linewidth = 0.3
+end = 800.0
+color = #ff00ff
+list = 380.0
+critic = False
+custom = False
+start = 300.0
+step = 50.0
+position = 38
+units = True
+label = True
+linestyle = 0
+

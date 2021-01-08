@@ -1,0 +1,80 @@
+freesteam (2.2-7.3) unstable; urgency=medium
+
+  * rebuild for python 3.9
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 22 Dec 2020 18:10:34 +0100
+
+freesteam (2.2-7.2) unstable; urgency=medium
+
+  * rebuild against libgsl-dev 2.6
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Fri, 15 May 2020 09:01:57 +0200
+
+freesteam (2.2-7.1) unstable; urgency=medium
+
+  * add missing config.h
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 13 May 2019 11:10:53 +0200
+
+freesteam (2.2-7) unstable; urgency=medium
+
+  * d/patches: add support for cmake
+  * d/control: move to cmake
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 16 Apr 2019 11:37:51 +0200
+
+freesteam (2.2-6) unstable; urgency=medium
+
+  * d/control: rebuild against ligsl-dev 2.3
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 13 Sep 2017 13:34:54 +0200
+
+freesteam (2.2-5) unstable; urgency=medium
+
+  * d/control: replace libgls0-dev by libgsl-dev 
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 21 Jun 2017 17:40:40 +0200
+
+freesteam (2.2-4) usntable; urgency=medium
+
+  * correct freesteam.pc
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 14 Mar 2017 17:25:43 +0100
+
+freesteam (2.2-3) unstable; urgency=medium
+
+  * d/control:
+    rebuild against libgsl-dev (2.1)
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 15 Dec 2015 10:06:18 +0100
+
+freesteam (2.2-2) unstable; urgency=medium
+
+  * rebuild against gsl 2.1
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 03 Dec 2015 08:08:49 +0100
+
+freesteam (2.2-1.2) unstable; urgency=medium
+
+  * Add missing freesteam.pc
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 12 May 2015 09:19:57 +0200
+
+freesteam (2.2-1.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Fri, 27 Mar 2015 09:48:55 +0100
+
+freesteam (2.1-0~ubuntu1204) precise; urgency=low
+
+  * New version, packaging also the GTK GUI
+
+ -- John Pye <john.pye@anu.edu.au>  Thu, 11 Apr 2013 22:34:00 +1000
+
+freesteam (2.0) karmic; urgency=low
+
+  * First packaging as Deb
+
+ -- John Pye (Aug 08) <john@curioussymbols.com>  Sun, 24 Jan 2010 17:41:00 +1000
+

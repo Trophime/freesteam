@@ -1,0 +1,19 @@
+.TH freesteam-gtk 1 "December 17, 2012" freesteam "User's Manual"
+.SH NAME
+freesteam-gtk \- GTK+ interactive GUI for freesteam
+
+.SH SYNOPSIS
+.B Usage: freesteam-gtk
+
+.SH DESCRIPTION
+
+\fBfreesteam-gtk\fR allows interactive calculation of steam properties
+as a function of various specified property pairs including pressure and
+temperature, pressure and enthalpy, and several others.
+
+\fBfreesteam\fR, in general is steam properties library that allows you to
+calculate the properties of water and steam over a wide range or pressures and
+temperatures. For more information see the freesteam website at
+
+http://freesteam.sourceforge.net/
+

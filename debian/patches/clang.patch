@@ -1,0 +1,13 @@
+Index: freesteam-2.1/compat.h
+===================================================================
+--- freesteam-2.1.orig/compat.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/compat.h	2013-03-21 18:09:08.000000000 +0100
+@@ -482,7 +482,7 @@
+ 		inline SteamCalculator solve(const double &fp, const double &sp){return SteamCalculator((*solvefunc)(fp,sp));}
+ 
+ 		/* ignore any provided guesses, we can't use those currently in freesteam 2.0 */
+-		inline SteamState solve(const double &fp, const double &sp, const SteamCalculator firstguess){return SteamCalculator((*solvefunc)(fp,sp));}
++		inline SteamState solve(const double &fp, const double &sp, const SteamCalculator firstguess){return (*solvefunc)(fp,sp);}
+ };
+ 
+ template<>

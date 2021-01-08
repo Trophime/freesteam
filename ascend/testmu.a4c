@@ -1,0 +1,25 @@
+REQUIRE "johnpye/thermo_types.a4c";
+IMPORT "freesteam";
+
+MODEL testmu;
+
+	p IS_A pressure;
+	T_f IS_A temperature;
+	mu_f IS_A viscosity;
+	k_f IS_A thermal_conductivity;
+	rho_f IS_A mass_density;
+	cp_f IS_A specific_heat_capacity;
+
+	filmprops: freesteam_mukrhocp_pT(
+		p, T_f : INPUT;
+		mu_f, k_f, rho_f, cp_f : OUTPUT
+	);
+
+METHODS
+METHOD on_load;
+	FIX p; p := 3 {bar};
+	FIX T_f; T_f := 300 {K};
+END on_load;
+
+END testmu;
+

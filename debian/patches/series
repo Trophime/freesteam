@@ -1,0 +1,8 @@
+clang.patch
+cadna.patch
+gcc-g++.patch
+fix-FTBS-test.patch
+pedantic.patch
+fix-pytest.cmake
+cmake.patch
+swig4.patch

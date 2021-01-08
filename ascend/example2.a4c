@@ -1,0 +1,33 @@
+IMPORT "freesteam";
+REQUIRE "atoms.a4l";
+REQUIRE "johnpye/thermo_types.a4c";
+
+MODEL example2;
+	p IS_A pressure;
+	h IS_A specific_energy;
+	T IS_A temperature;
+	v IS_A specific_volume;
+	s IS_A specific_entropy;
+	x IS_A fraction;
+	steam: freesteam_Tvsx_ph(
+		p,h : INPUT;
+		T,v,s,x : OUTPUT
+	);
+	hf, hg IS_A specific_enthalpy;
+	steam2: freesteam_hf_p(
+		p : INPUT;
+		hf : OUTPUT
+	);
+	steam3: freesteam_hg_p(
+		p : INPUT;
+		hg : OUTPUT
+	);
+METHODS
+METHOD on_load;
+	FIX p, h;
+	p := 1 {bar};
+	h := 400 {kJ/kg};
+END on_load;
+END example2;
+
+

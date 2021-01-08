@@ -1,0 +1,122 @@
+Source: freesteam
+Section: contrib/science
+Priority: extra
+Maintainer: John Pye <john@curioussymbols.com>
+Build-Depends: debhelper (>= 9), cmake, gcc (>= 4.3), swig, 
+ libgsl-dev (>= 2.3+dfsg-1~),
+ dh-python,
+ python3-all-dev (>= 3.5~), 
+ python-all-dev (>= 2.6.6-3~)
+# gsl-bin (>= 2.3+dfsg-1~),
+# pkg-config,
+# libgtk2.0-dev,
+# libascend-dev,
+# python3-matplotlib, python-matplotlib,
+# python3-pyqt4 
+X-Python-Version: current
+X-Python3-Version: >= 3.2
+Standards-Version: 3.7.2
+
+Package: libfreesteam1
+Architecture: any
+Depends: ${shlibs:Depends}
+Description:Steam properties calculation library
+ Freesteam implements the international-standard IAPWS-IF97
+ release for calculation of the thermodynamic properties of water and
+ steam. It provides a C API together with a Python interface as well as
+ bindings for the ASCEND modelling environment.
+ .
+ For more information, see our web page:
+ http://freesteam.sourceforge.net/
+ .
+ This package contains the freesteam shared library.
+
+Package: freesteam-doc
+Architecture: any
+Depends: ${shlibs:Depends}
+Description:Steam properties calculation library (ASCEND bindings)
+ Freesteam implements the international-standard IAPWS-IF97
+ release for calculation of the thermodynamic properties of water and
+ steam. It provides a C API together with a Python interface as well as
+ bindings for the ASCEND modelling environment.
+ .
+ For more information, see our web page:
+ http://freesteam.sourceforge.net/
+ .
+ This package contains some examples
+
+# Package: freesteam-ascend
+# Architecture: any
+# Depends: ${shlibs:Depends}
+# Description:Steam properties calculation library (ASCEND bindings)
+#  Freesteam implements the international-standard IAPWS-IF97
+#  release for calculation of the thermodynamic properties of water and
+#  steam. It provides a C API together with a Python interface as well as
+#  bindings for the ASCEND modelling environment.
+#  .
+#  For more information, see our web page:
+#  http://freesteam.sourceforge.net/
+#  .
+#  This package contains the ASCEND bindings
+
+Package: python-freesteam
+Architecture: any
+Section: python
+Depends: libfreesteam-dev (= ${binary:Version}), ${python:Depends}
+Description:Steam properties calculation library (Python bindings)
+ Freesteam implements the international-standard IAPWS-IF97
+ release for calculation of the thermodynamic properties of water and
+ steam. It provides a C API together with a Python interface as well as
+ bindings for the ASCEND modelling environment.
+ .
+ For more information, see our web page:
+ http://freesteam.sourceforge.net/
+ .
+ This package contains bindings to allow freesteam to be used from Python.
+
+Package: python3-freesteam
+Architecture: any
+Section: python
+Depends: libfreesteam-dev (= ${binary:Version}), ${python3:Depends}
+Description:Steam properties calculation library (Python3 bindings)
+ Freesteam implements the international-standard IAPWS-IF97
+ release for calculation of the thermodynamic properties of water and
+ steam. It provides a C API together with a Python interface as well as
+ bindings for the ASCEND modelling environment.
+ .
+ For more information, see our web page:
+ http://freesteam.sourceforge.net/
+ .
+ This package contains bindings to allow freesteam to be used from Python3.
+
+Package: libfreesteam-dev
+Architecture: any
+Depends: libfreesteam1 (= ${binary:Version}), libgsl-dev (>= 2.3+dfsg-1~)
+Description:Steam properties calculation library (dev package)
+ Freesteam implements the international-standard IAPWS-IF97
+ release for calculation of the thermodynamic properties of water and
+ steam. It provides a C API together with a Python interface as well as
+ bindings for the ASCEND modelling environment.
+ .
+ For more information, see our web page:
+ http://freesteam.sourceforge.net/
+ .
+ This is the development package allowing you to compile against freesteam
+ the freesteam C API.
+
+# Package: freesteam-gtk
+# Architecture: any
+# Depends: ${shlibs:Depends}, libfreesteam1 (= ${binary:Version})
+# Description:Steam properties calculation library (dev package)
+#  Freesteam implements the international-standard IAPWS-IF97
+#  release for calculation of the thermodynamic properties of water and
+#  steam. It provides a C API together with a Python interface as well as
+#  bindings for the ASCEND modelling environment.
+#  .
+#  For more information, see our web page:
+#  http://freesteam.sourceforge.net/
+#  .
+#  This is a small graphical interface for freesteam allowing on-the-fly
+#  evaluation of steam properties.
+
+# vim: sw=4:et:ai

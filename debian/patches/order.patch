@@ -1,0 +1,41 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ freesteam (2.2-7) unstable; urgency=medium
+ .
+   * d/patches: add support for cmake
+   * d/control: move to cmake
+Author: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2019-04-16
+
+--- freesteam-2.2.orig/CMakeLists.txt
++++ freesteam-2.2/CMakeLists.txt
+@@ -13,7 +13,11 @@ if (NOT FREESTEAM_PYTHON_VERSION)
+   MESSAGE(STATUS "Setting default PYTHON version to 3")
+ endif()
+ 
+-set(SRCS b23.c backwards.c bounds.c common.c derivs.c region1.c region2.c region3.c region4.c solver2.c steam.c steam_ph.c steam_ps.c steam_pT.c steam_pu.c steam_pv.c steam_Ts.c steam_Tx.c steam_uv.c surftens.c thcond.c viscosity.c zeroin.c )
++set(SRCS region1.c region2.c region3.c region4.c steam_ph.c
++	steam.c backwards.c b23.c common.c derivs.c zeroin.c
++	steam_ps.c solver2.c steam_pT.c steam_pu.c steam_Ts.c
++	steam_Tx.c surftens.c
++	bounds.c steam_pv.c viscosity.c thcond.c )
+ 
+ set(HEADERS backwards.h backwards_impl.h bounds.h common.h compat.h derivs.h region1.h region2.h region3.h region4.h solver2.h steam.h steam_ph.h steam_ps.h steam_pT.h steam_pu.h steam_pv.h steam_Ts.h steam_Tx.h steam_uv.h surftens.h thcond.h viscosity.h zeroin.h )
+ 

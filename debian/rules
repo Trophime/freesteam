@@ -1,0 +1,43 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# eventually add -O3 -march=native -mtune=native
+export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+export DEB_CXXFLAGS_MAINT_APPEND  = -Wall -pedantic
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+export DEB_HOST_MULTIARCH := $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+
+%:
+	dh $@ --buildsystem=cmake --with python2,python3
+
+## export LD_LIBRARY_PATH :=  $(CURDIR)/debian/tmp/usr/lib:$(LD_LIBRARY_PATH)
+
+extra_flags += \
+ -DCMAKE_VERBOSE_MAKEFILE=ON \
+ -DINSTALL_LIB_DIR="/usr/lib/$(DEB_HOST_MULTIARCH)" \
+ -DFREESTEAM_ENABLE_PYTHON=ON \
+ -DFREESTEAM_ENABLE_EXAMPLES=ON \
+ -DBUILD_TESTING=ON
+
+override_dh_auto_configure:
+	dh_auto_configure -Bbuild.python3 -- $(extra_flags) -DFREESTEAM_PYTHON_VERSION=3
+	dh_auto_configure -Bbuild.python2 -- $(extra_flags) -DFREESTEAM_PYTHON_VERSION=2.7
+
+override_dh_auto_build:
+	dh_auto_build -Bbuild.python3
+	dh_auto_build -Bbuild.python2
+
+override_dh_auto_install:
+	dh_auto_install -Bbuild.python3
+	dh_auto_install -Bbuild.python2
+
+	mkdir -p debian/tmp/usr/share/doc/freesteam/python
+	install python/*.py debian/tmp/usr/share/doc/freesteam/python
+	mkdir -p debian/tmp/usr/share/doc/freesteam/examples
+	install examples/isentropic.c debian/tmp/usr/share/doc/freesteam/examples
+
+override_dh_auto_test:
+	PYTHONPATH=$(CURDIR)/build.python3/python:$(PYTHONPATH) dh_auto_test -Bbuild.python3
+	PYTHONPATH=$(CURDIR)/build.python2/python:$(PYTHONPATH) dh_auto_test -Bbuild.python2
+

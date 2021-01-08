@@ -1,0 +1,1128 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ freesteam (2.1-5) unstable; urgency=low
+ .
+   * Add freesteam.pc
+Author: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+Index: freesteam-2.2/steam_pv.c
+===================================================================
+--- freesteam-2.2.orig/steam_pv.c
++++ freesteam-2.2/steam_pv.c
+@@ -35,11 +35,19 @@ Foundation, Inc., 51 Franklin Street, Fi
+ #include <stdlib.h>
+ 
+ int freesteam_bounds_pv(MyDouble p, MyDouble v, int verbose){
++#ifndef HAVE_CADNA_H
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (p = %g MPa, v = %g m3/kg)\n"\
+ 		,__func__,__FILE__,__LINE__,p/1e6,v);\
+ 	}
++#else
++#define BOUND_WARN(MSG) \
++	if(verbose){\
++		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (p = %s MPa, v = %s m3/kg)\n"\
++		,__func__,__FILE__,__LINE__,strp(p/1e6),strp(v));\
++	}
++#endif
+ 
+ 	if(p <= 0){
+ 		BOUND_WARN("p <= 0");
+@@ -139,8 +147,8 @@ SteamState freesteam_set_pv(MyDouble p,
+ 	switch(S.region){
+ 		case 1:
+ 			/* iterate T to get correct value of v */
+-			S.R1.p = p;
+-			S.R1.T = freesteam_region4_Tsat_p(p);
++			S.SteamState_U.R1.p = p;
++			S.SteamState_U.R1.T = freesteam_region4_Tsat_p(p);
+ 			{
+ 				MyDouble lb = IAPWS97_TMIN;
+ 				MyDouble ub = REGION1_TMAX;
+@@ -148,7 +156,7 @@ SteamState freesteam_set_pv(MyDouble p,
+ 				MyDouble sol, err;
+ 				SolvePVData D = {p, v};
+ 				zeroin_solve(&pv_region1_fn, &D, lb, ub, tol, &sol, &err);
+-				S.R1.T = sol;
++				S.SteamState_U.R1.T = sol;
+ 				/* FIXME check convergence! */
+ 			}
+ #if 0
+@@ -160,8 +168,8 @@ SteamState freesteam_set_pv(MyDouble p,
+ 			break;
+ 		case 2:
+ 			/* iterate T to get correct value of v */
+-			S.R2.p = p;
+-			S.R2.T = freesteam_region4_Tsat_p(p);
++			S.SteamState_U.R2.p = p;
++			S.SteamState_U.R2.T = freesteam_region4_Tsat_p(p);
+ 			{
+ 				MyDouble lb = IAPWS97_TMIN;
+ 				MyDouble ub = IAPWS97_TMAX;
+@@ -169,13 +177,13 @@ SteamState freesteam_set_pv(MyDouble p,
+ 				MyDouble sol, err;
+ 				SolvePVData D = {p, v};
+ 				zeroin_solve(&pv_region2_fn, &D, lb, ub, tol, &sol, &err);
+-				S.R2.T = sol;
++				S.SteamState_U.R2.T = sol;
+ 				/* FIXME check convergence! */
+ 			}
+ 
+ #if 0
+-			S.R2.p = p;
+-			S.R2.T = freesteam_region4_Tsat_p(p);
++			S.SteamState_U.R2.p = p;
++			S.SteamState_U.R2.T = freesteam_region4_Tsat_p(p);
+ 			S = freesteam_solver2_region2('p','v', p, v, S, &status);
+ 			if(status){
+ 				fprintf(stderr,"%s: WARNING: Failed to converge in region 2\n",__func__);
+@@ -183,16 +191,16 @@ SteamState freesteam_set_pv(MyDouble p,
+ #endif
+ 			break;
+ 		case 3:
+-			S.R3.rho = 1./ v;
+-			S.R3.T = REGION1_TMAX;
++			S.SteamState_U.R3.rho = 1./ v;
++			S.SteamState_U.R3.T = REGION1_TMAX;
+ 			{
+ 				MyDouble lb = REGION1_TMAX;
+ 				MyDouble ub = IAPWS97_TMAX;
+ 				MyDouble tol = 1e-12; /* ??? */
+ 				MyDouble sol, err;
+-				SolvePRhoData D = {p, S.R3.rho};
++				SolvePRhoData D = {p, S.SteamState_U.R3.rho};
+ 				zeroin_solve(&pv_region3_fn, &D, lb, ub, tol, &sol, &err);
+-				S.R3.T = sol;
++				S.SteamState_U.R3.T = sol;
+ 				//fprintf(stderr,"%s: (p = %f MPa,v = %f m3/kg) region 3, error in p = %f\n",__func__,p,v, err);
+ 				/* FIXME check convergence! */
+ 			}
+@@ -204,18 +212,18 @@ SteamState freesteam_set_pv(MyDouble p,
+ #endif
+ 			break;
+ 		case 4:
+-			S.R4.T = freesteam_region4_Tsat_p(p);
+-			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.R4.T);
++			S.SteamState_U.R4.T = freesteam_region4_Tsat_p(p);
++			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.SteamState_U.R4.T);
+ 			MyDouble vf, vg;
+-			if(S.R4.T <= REGION1_TMAX){
+-				vf = freesteam_region1_v_pT(p,S.R4.T);
+-				vg = freesteam_region2_v_pT(p,S.R4.T);
++			if(S.SteamState_U.R4.T <= REGION1_TMAX){
++				vf = freesteam_region1_v_pT(p,S.SteamState_U.R4.T);
++				vg = freesteam_region2_v_pT(p,S.SteamState_U.R4.T);
+ 			}else{
+ 				/* TODO iteratively improve estimate of T */
+-				vf = 1./ freesteam_region4_rhof_T(S.R4.T);
+-				vg = 1./ freesteam_region4_rhog_T(S.R4.T);
++				vf = 1./ freesteam_region4_rhof_T(S.SteamState_U.R4.T);
++				vg = 1./ freesteam_region4_rhog_T(S.SteamState_U.R4.T);
+ 			}
+-			S.R4.x = (v - vf)/(vg - vf);
++			S.SteamState_U.R4.x = (v - vf)/(vg - vf);
+ 	}
+ 	return S;
+ }
+Index: freesteam-2.2/steam_ph.c
+===================================================================
+--- freesteam-2.2.orig/steam_ph.c
++++ freesteam-2.2/steam_ph.c
+@@ -36,12 +36,19 @@ Foundation, Inc., 51 Franklin Street, Fi
+ 
+ int freesteam_bounds_ph(MyDouble p, MyDouble h, int verbose){
+ 
++#ifndef HAVE_CADNA_H
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (p = %g MPa, h = %g kJ/kg)\n"\
+ 		,__func__,__FILE__,__LINE__,p/1e6,h/1e3);\
+ 	}
+-
++#else
++#define BOUND_WARN(MSG) \
++	if(verbose){\
++		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (p = %s MPa, h = %s kJ/kg)\n"\
++		,__func__,__FILE__,__LINE__,strp(p/1e6),strp(h/1e3));\
++	}
++#endif
+ 	if(p <= 0){
+ 		BOUND_WARN("p <= 0");
+ 		return 1;
+@@ -127,27 +134,30 @@ SteamState freesteam_set_ph(MyDouble p,
+ 	S.region = (char)freesteam_region_ph(p,h);
+ 	//int status;
+ 	switch(S.region){
+-		case 1:
+-			S.R1.p = p;
+-			S.R1.T = freesteam_region1_T_ph(p, h);
++		case 1: 
++		{
++			S.SteamState_U.R1.p = p;
++			S.SteamState_U.R1.T = freesteam_region1_T_ph(p, h);
+ #if 0
+ 			S = freesteam_solver2_region1('p','h', p, h, S, &status);
+ 			if(status){
+ 				fprintf(stderr,"%s: WARNING: Failed to converge in region 1\n",__func__);
+ 			}
+ #endif
+-			return S;
++			break;
++		}
+ 		case 2:
+-			S.R2.p = p;
+-			S.R2.T = freesteam_region2_T_ph(p, h);
++		{
++			S.SteamState_U.R2.p = p;
++			S.SteamState_U.R2.T = freesteam_region2_T_ph(p, h);
+ 			{
+-				MyDouble lb = S.R2.T * 0.999;
+-				MyDouble ub = S.R2.T * 1.001;
++				MyDouble lb = S.SteamState_U.R2.T * 0.999;
++				MyDouble ub = S.SteamState_U.R2.T * 1.001;
+ 				MyDouble tol = 1e-9; /* ??? */
+ 				MyDouble sol, err;
+ 				SolvePHData D = {p, h};
+ 				zeroin_solve(&ph_region2_fn, &D, lb, ub, tol, &sol, &err);
+-				S.R2.T = sol;
++				S.SteamState_U.R2.T = sol;
+ 			}
+ #if 0
+ 			/* solver2 is not working in this region, for some reason. */
+@@ -156,10 +166,12 @@ SteamState freesteam_set_ph(MyDouble p,
+ 				fprintf(stderr,"%s: WARNING: Failed to converge in region 2\n");
+ 			}
+ #endif
+-			return S;
++			break;
++		}
+ 		case 3:
+-			S.R3.rho = 1./freesteam_region3_v_ph(p, h);
+-			S.R3.T = freesteam_region3_T_ph(p, h);
++		{
++			S.SteamState_U.R3.rho = 1./freesteam_region3_v_ph(p, h);
++			S.SteamState_U.R3.T = freesteam_region3_T_ph(p, h);
+ #if 0
+ 			/* FIXME: this code doesn't work, see pTdiagram.h for example */
+ 			/* by not iterating here, the relative error is increased from
+@@ -169,28 +181,34 @@ SteamState freesteam_set_ph(MyDouble p,
+ 				fprintf(stderr,"%s: WARNING: Failed to converge in region 3\n",__func__);
+ 			}
+ #endif
+-			return S;
++			break;
++		}
+ 		case 4:
+-			S.R4.T = freesteam_region4_Tsat_p(p);
+-			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.R4.T);
+-			MyDouble hf, hg;
+-			if(S.R4.T <= REGION1_TMAX){
+-				hf = freesteam_region1_h_pT(p,S.R4.T);
+-				hg = freesteam_region2_h_pT(p,S.R4.T);
++		{
++			S.SteamState_U.R4.T = freesteam_region4_Tsat_p(p);
++			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.SteamState_U.R4.T);
++			MyDouble hf;
++			MyDouble hg;
++			if(S.SteamState_U.R4.T <= REGION1_TMAX){
++				hf = freesteam_region1_h_pT(p,S.SteamState_U.R4.T);
++				hg = freesteam_region2_h_pT(p,S.SteamState_U.R4.T);
+ 			}else{
+ 				/* TODO iteratively improve estimate of T */
+-				MyDouble rhof = freesteam_region4_rhof_T(S.R4.T);
+-				MyDouble rhog = freesteam_region4_rhog_T(S.R4.T);
++				MyDouble rhof = freesteam_region4_rhof_T(S.SteamState_U.R4.T);
++				MyDouble rhog = freesteam_region4_rhog_T(S.SteamState_U.R4.T);
+ 				/* FIXME iteratively improve these estimates of rhof, rhog */
+-				hf = freesteam_region3_h_rhoT(rhof,S.R4.T);
+-				hg = freesteam_region3_h_rhoT(rhog,S.R4.T);
++				hf = freesteam_region3_h_rhoT(rhof,S.SteamState_U.R4.T);
++				hg = freesteam_region3_h_rhoT(rhog,S.SteamState_U.R4.T);
+ 			}
+-			S.R4.x = (h - hf)/(hg - hf);
+-			return S;
++			S.SteamState_U.R4.x = (h - hf)/(hg - hf);
++			break;
++		}
+ 		default:
++		{
+ 			fprintf(stderr,"%s: invalid region %d\n",__func__,S.region);
+-			return S;
++                }
+ 	}
++	return S;
+ }
+ 
+ 
+Index: freesteam-2.2/derivs.c
+===================================================================
+--- freesteam-2.2.orig/derivs.c
++++ freesteam-2.2/derivs.c
+@@ -17,6 +17,7 @@ along with this program; if not, write t
+ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+ #define FREESTEAM_BUILDING_LIB
++#include <math.h>
+ #include "derivs.h"
+ 
+ #include "region1.h"
+@@ -114,8 +115,8 @@ FIXME the following macros avoid calcula
+ but at the level of freesteam_deriv, there is wasted effort, because eg 'p' 
+ will be calculated several times in different calls to VT3.
+ */
+-#define rho S.R3.rho
+-#define T S.R3.T
++#define rho S.SteamState_U.R3.rho
++#define T S.SteamState_U.R3.T
+ #define p freesteam_region3_p_rhoT(rho,T)
+ #define cv freesteam_region3_cv_rhoT(rho,T)
+ #define v (1./rho)
+@@ -179,8 +180,8 @@ MyDouble freesteam_region3_dAdTv(FREESTE
+   REGION 1 DERIVATIVES
+ */
+ 
+-#define p S.R1.p
+-#define T S.R1.T
++#define p S.SteamState_U.R1.p
++#define T S.SteamState_U.R1.T
+ #define cp freesteam_region1_cp_pT(p,T)
+ #define v freesteam_region1_v_pT(p,T)
+ #define s freesteam_region1_s_pT(p,T)
+@@ -247,8 +248,8 @@ MyDouble freesteam_region1_dAdpT(FREESTE
+   REGION 2 DERIVATIVES
+ */
+ 
+-#define p S.R2.p
+-#define T S.R2.T
++#define p S.SteamState_U.R2.p
++#define T S.SteamState_U.R2.T
+ #define cp freesteam_region2_cp_pT(p,T)
+ #define v freesteam_region2_v_pT(p,T)
+ #define s freesteam_region2_s_pT(p,T)
+@@ -329,7 +330,7 @@ in terms of (∂z/∂T)x and (∂z/∂x)
+ */
+ MyDouble freesteam_region4_dAdTx(FREESTEAM_CHAR z, SteamState S){
+ 	MyDouble res;
+-#define T S.R4.T
++#define T S.SteamState_U.R4.T
+ 	switch(z){
+ 		case 'p': res = freesteam_region4_dpsatdT_T(T); return res;
+ 		case 'T': res = 1; return res;
+@@ -364,7 +365,7 @@ MyDouble freesteam_region4_dAdTx(FREESTE
+ 	}
+ 	assert(!isnan(dzfdT));
+ 	assert(!isnan(dzgdT));
+-#define x S.R4.x
++#define x S.SteamState_U.R4.x
+ 	res = dzfdT*(1-x) + dzgdT*x;
+ 	//fprintf(stderr,"(∂%c/∂T)x = %g\n",z,res);
+ 	return res;
+@@ -395,8 +396,8 @@ MyDouble freesteam_region4_dAdxT(FREESTE
+ 		case 'T': return 0;
+ 		case 'x': return 1;
+ 	}
+-#define T S.R4.T
+-#define x S.R4.x
++#define T S.SteamState_U.R4.T
++#define x S.SteamState_U.R4.x
+ 	MyDouble p = freesteam_region4_psat_T(T);
+ 	MyDouble zf, zg;
+ 	switch(z){
+Index: freesteam-2.2/steam_pT.c
+===================================================================
+--- freesteam-2.2.orig/steam_pT.c
++++ freesteam-2.2/steam_pT.c
+@@ -49,12 +49,12 @@ SteamState freesteam_set_pT(MyDouble p,
+ 	if(T < REGION1_TMAX){
+ 		if(p > freesteam_region4_psat_T(T)){
+ 			S.region = 1;
+-			S.R1.T = T;
+-			S.R1.p = p;
++			S.SteamState_U.R1.T = T;
++			S.SteamState_U.R1.p = p;
+ 		}else{
+ 			S.region = 2;
+-			S.R2.T = T;
+-			S.R2.p = p;
++			S.SteamState_U.R2.T = T;
++			S.SteamState_U.R2.p = p;
+ 		}
+ 	}else{
+ 		//fprintf(stderr,"%s: T = %g >= REGION1_TMAX = %g\n",__func__,T,REGION1_TMAX);
+@@ -64,8 +64,8 @@ SteamState freesteam_set_pT(MyDouble p,
+ 		if(p < p23min || T > T23){
+ 			//fprintf(stderr,"%s: T = %g > T23 =  %g\n",__func__,T,T23);
+ 			S.region = 2;
+-			S.R2.T = T;
+-			S.R2.p = p;
++			S.SteamState_U.R2.T = T;
++			S.SteamState_U.R2.p = p;
+ 		}else{
+ 			/* FIXME the limit values are all wrong here! */
+ 			//fprintf(stderr,"%s: region 3\n",__func__);
+@@ -91,8 +91,8 @@ SteamState freesteam_set_pT(MyDouble p,
+ 				exit(1);
+ 			}
+ 			S.region = 3;
+-			S.R3.T = T;
+-			S.R3.rho = sol;
++			S.SteamState_U.R3.T = T;
++			S.SteamState_U.R3.rho = sol;
+ 			//assert(fabs((freesteam_p(S) - p)/p) < tol);
+ 		}
+ 	}
+Index: freesteam-2.2/steam_pu.c
+===================================================================
+--- freesteam-2.2.orig/steam_pu.c
++++ freesteam-2.2/steam_pu.c
+@@ -123,9 +123,13 @@ SteamState freesteam_set_pu(MyDouble p,
+ 				SteamState guess = freesteam_region3_set_rhoT(IAPWS97_RHOCRIT,IAPWS97_TCRIT);
+ 				S = freesteam_solver2_region3('p','u', p, u, guess, &status);
+ 				if(status){
++					#ifndef HAVE_CADNA_H
+ 					fprintf(stderr,"%s (%s:%d): Failed solve in region 3 for (p = %g MPa, u = %g kJ/kg\n"
+ 						,__func__,__FILE__,__LINE__,p/1e6,u/1e3);
+-					//exit(1);
++					#else
++					fprintf(stderr,"%s (%s:%d): Failed solve in region 3 for (p = %s MPa, u = %s kJ/kg\n"
++						,__func__,__FILE__,__LINE__,strp(p/1e6),strp(u/1e3));
++					#endif
+ 				}
+ 			}
+ 			break;
+Index: freesteam-2.2/steam_Tx.c
+===================================================================
+--- freesteam-2.2.orig/steam_Tx.c
++++ freesteam-2.2/steam_Tx.c
+@@ -34,11 +34,19 @@ Foundation, Inc., 51 Franklin Street, Fi
+ 
+ int freesteam_bounds_Tx(MyDouble T, MyDouble x, int verbose){
+ 
++#ifndef HAVE_CADNA_H
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (T = %g K, x = %g)\n"\
+ 		,__func__,__FILE__,__LINE__,T,x);\
+ 	}
++#else
++#define BOUND_WARN(MSG) \
++	if(verbose){\
++		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (T = %s K, x = %s)\n"\
++		,__func__,__FILE__,__LINE__,strp(T),strp(x));\
++	}
++#endif
+ 
+ 	if(T <= IAPWS97_TMIN){
+ 		BOUND_WARN("T <= TMIN");
+@@ -107,35 +115,35 @@ SteamState freesteam_set_Tx(MyDouble T,
+ 			exit(1);
+ 		}
+ 		S.region = 3;
+-		S.R3.T = T;
+-		S.R3.rho = sol;
++		S.SteamState_U.R3.T = T;
++		S.SteamState_U.R3.rho = sol;
+ 	}else if(x <= 0){
+ 		if(T > REGION1_TMAX){
+ 			S.region = 3;
+-			S.R3.T = T;
+-			S.R3.rho = freesteam_region4_rhof_T(T);	
++			S.SteamState_U.R3.T = T;
++			S.SteamState_U.R3.rho = freesteam_region4_rhof_T(T);	
+ 			/* FIXME iteratively refine the value */
+ 		}else{
+ 			S.region = 1;
+-			S.R1.p = freesteam_region4_psat_T(T);
+-			S.R1.T = T;
++			S.SteamState_U.R1.p = freesteam_region4_psat_T(T);
++			S.SteamState_U.R1.T = T;
+ 		}
+ 	}else if(x >= 1){
+ 		if(T > REGION1_TMAX){
+ 			S.region = 3;
+-			S.R3.T = T;
+-			S.R3.rho = freesteam_region4_rhog_T(T);	
++			S.SteamState_U.R3.T = T;
++			S.SteamState_U.R3.rho = freesteam_region4_rhog_T(T);	
+ 			/* FIXME iteratively refine the value */
+ 		}else{
+ 			S.region = 2;
+-			S.R1.p = freesteam_region4_psat_T(T);
+-			S.R1.T = T;
++			S.SteamState_U.R1.p = freesteam_region4_psat_T(T);
++			S.SteamState_U.R1.T = T;
+ 		}
+ 	}else{
+ 		/* finally! */
+ 		S.region = 4;
+-		S.R4.T = T;
+-		S.R4.x = x;
++		S.SteamState_U.R4.T = T;
++		S.SteamState_U.R4.x = x;
+ 	}
+ 
+ 	return S;
+Index: freesteam-2.2/steam_Ts.c
+===================================================================
+--- freesteam-2.2.orig/steam_Ts.c
++++ freesteam-2.2/steam_Ts.c
+@@ -34,11 +34,19 @@ Foundation, Inc., 51 Franklin Street, Fi
+ #include <math.h>
+ 
+ int freesteam_bounds_Ts(MyDouble T, MyDouble s, int verbose){
++#ifndef HAVE_CADNA_H
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (T = %g, s = %g kJ/kgK)\n"\
+ 		,__func__,__FILE__,__LINE__,T,s/1e3);\
+ 	}
++#else
++#define BOUND_WARN(MSG) \
++	if(verbose){\
++		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (T = %s, s = %s kJ/kgK)\n"\
++		,__func__,__FILE__,__LINE__,strp(T),strp(s/1e3));\
++	}
++#endif
+ 
+ 	if(T < IAPWS97_TMIN){
+ 		BOUND_WARN("T < TMIN");
+Index: freesteam-2.2/bounds.c
+===================================================================
+--- freesteam-2.2.orig/bounds.c
++++ freesteam-2.2/bounds.c
+@@ -45,15 +45,15 @@ SteamState freesteam_bound_pmax_T(MyDoub
+ 	SteamState S;
+ 	if(T <= REGION1_TMAX){
+ 		S.region = 1;
+-		S.R1.p = IAPWS97_PMAX;
+-		S.R1.T = T;
++		S.SteamState_U.R1.p = IAPWS97_PMAX;
++		S.SteamState_U.R1.T = T;
+ 	}else if(T > freesteam_region2_s_pT(IAPWS97_PMAX,freesteam_b23_T_p(IAPWS97_PMAX))){
+ 		S.region = 2;
+-		S.R2.p = IAPWS97_PMAX;
+-		S.R2.T = T;
++		S.SteamState_U.R2.p = IAPWS97_PMAX;
++		S.SteamState_U.R2.T = T;
+ 	}else{
+ 		S.region = 3;
+-		S.R3.T = T;
++		S.SteamState_U.R3.T = T;
+ 		SteamPTData D = {IAPWS97_PMAX, T};
+ 		MyDouble tol = 1e-7;
+ 		MyDouble sol, err = 0;
+@@ -64,7 +64,7 @@ SteamState freesteam_bound_pmax_T(MyDoub
+ 			fprintf(stderr,"%s (%s:%d): failed to solve for rho\n",__func__,__FILE__,__LINE__);
+ 			exit(1);
+ 		}
+-		S.R3.rho = sol;
++		S.SteamState_U.R3.rho = sol;
+ 	}
+ 	return S;
+ }
+Index: freesteam-2.2/steam.h
+===================================================================
+--- freesteam-2.2.orig/steam.h
++++ freesteam-2.2/steam.h
+@@ -41,12 +41,21 @@ typedef struct SteamState_R4_struct{
+ 
+ typedef struct SteamState_struct{
+ 	char region;
+-	union{
++	union U {
+ 		SteamState_R1 R1;
+ 		SteamState_R2 R2;
+ 		SteamState_R3 R3;
+ 		SteamState_R4 R4;
+-	};
++		
++		#if HAVE_CADNA_H && defined(__cplusplus)
++		U() { 
++		   new( &R1 ) SteamState_R1(); 
++		   new( &R2 ) SteamState_R2(); 
++		   new( &R3 ) SteamState_R3(); 
++		   new( &R4 ) SteamState_R4(); 
++		}
++		#endif
++	} SteamState_U ;
+ } SteamState;
+ 
+ FREESTEAM_DLL int freesteam_region(SteamState S);
+Index: freesteam-2.2/solver2.c
+===================================================================
+--- freesteam-2.2.orig/solver2.c
++++ freesteam-2.2/solver2.c
+@@ -235,8 +235,8 @@ SteamState freesteam_solver2_region4(FRE
+ 
+ 	gsl_vector *x = gsl_vector_alloc(n);
+ 	assert(guess.region==4);
+-	gsl_vector_set(x, 0, guess.R4.T);
+-	gsl_vector_set(x, 1, guess.R4.x);
++	gsl_vector_set(x, 0, guess.SteamState_U.R4.T);
++	gsl_vector_set(x, 1, guess.SteamState_U.R4.x);
+ 	T = gsl_multiroot_fdfsolver_gnewton;
+ 	s = gsl_multiroot_fdfsolver_alloc(T, n);
+ 	gsl_multiroot_fdfsolver_set(s, &f, x);
+@@ -298,7 +298,11 @@ static int region2_fdf(const gsl_vector
+ static void region2_print_state(size_t iter, gsl_multiroot_fdfsolver *s){
+ 	MyDouble p = gsl_vector_get(s->x,0);
+ 	MyDouble T = gsl_vector_get(s->x,1);
++	#ifndef HAVE_CADNA_H
+ 	fprintf(stderr,"iter = %lu: p = %g, T = %g\n", (long unsigned)iter,p,T);
++	#else
++	fprintf(stderr,"iter = %lu: p = %s, T = %s\n", (long unsigned)iter,strp(p),strp(T));
++	#endif
+ }
+ 
+ SteamState freesteam_solver2_region2(FREESTEAM_CHAR A, FREESTEAM_CHAR B, MyDouble atarget, MyDouble btarget, SteamState guess, int *retstatus){
+Index: freesteam-2.2/steam.c
+===================================================================
+--- freesteam-2.2.orig/steam.c
++++ freesteam-2.2/steam.c
+@@ -36,8 +36,8 @@ Foundation, Inc., 51 Franklin Street, Fi
+ SteamState freesteam_region1_set_pT(MyDouble p, MyDouble T){
+ 	SteamState S;
+ 	S.region = 1;
+-	S.R1.p = p;
+-	S.R1.T = T;
++	S.SteamState_U.R1.p = p;
++	S.SteamState_U.R1.T = T;
+ 	/* FIXME add bounds check? */
+ 	return S;
+ }
+@@ -45,8 +45,8 @@ SteamState freesteam_region1_set_pT(MyDo
+ SteamState freesteam_region2_set_pT(MyDouble p, MyDouble T){
+ 	SteamState S;
+ 	S.region = 2;
+-	S.R2.p = p;
+-	S.R2.T = T;
++	S.SteamState_U.R2.p = p;
++	S.SteamState_U.R2.T = T;
+ 	/* FIXME add bounds check? */
+ 	return S;
+ }
+@@ -54,8 +54,8 @@ SteamState freesteam_region2_set_pT(MyDo
+ SteamState freesteam_region3_set_rhoT(MyDouble rho, MyDouble T){
+ 	SteamState S;
+ 	S.region = 3;
+-	S.R3.rho = rho;
+-	S.R3.T = T;
++	S.SteamState_U.R3.rho = rho;
++	S.SteamState_U.R3.T = T;
+ 	/* FIXME add bounds check? */
+ 	return S;
+ }
+@@ -63,8 +63,8 @@ SteamState freesteam_region3_set_rhoT(My
+ SteamState freesteam_region4_set_Tx(MyDouble T, MyDouble x){
+ 	SteamState S;
+ 	S.region = 4;
+-	S.R4.T = T;
+-	S.R4.x = x;
++	S.SteamState_U.R4.T = T;
++	S.SteamState_U.R4.x = x;
+ 	/* FIXME add bounds check? */
+ 	return S;
+ }
+@@ -74,17 +74,33 @@ int freesteam_fprint(FILE *f, SteamState
+ 	n += fprintf(f, "region %d: ", S.region);
+ 	switch(S.region){
+ 		case 1:
+-			n += fprintf(f, "p = %f MPa, T = %f K\n", S.R1.p/1e6, S.R1.T);
++			#ifndef HAVE_CADNA_H
++			n += fprintf(f, "p = %f MPa, T = %f K\n", S.SteamState_U.R1.p/1e6, S.SteamState_U.R1.T);
++			#else
++			n += fprintf(f, "p = %s MPa, T = %s K\n", strp(S.SteamState_U.R1.p/1e6), strp(S.SteamState_U.R1.T));
++			#endif
+ 			break;
+ 		case 2:
+-			n += fprintf(f, "p = %f MPa, T = %f K\n", S.R2.p/1e6, S.R2.T);
++			#ifndef HAVE_CADNA_H
++			n += fprintf(f, "p = %f MPa, T = %f K\n", S.SteamState_U.R2.p/1e6, S.SteamState_U.R2.T);
++			#else
++			n += fprintf(f, "p = %s MPa, T = %s K\n", strp(S.SteamState_U.R2.p/1e6), strp(S.SteamState_U.R2.T));
++			#endif
+ 			break;
+ 		case 3:
+-			n += fprintf(f, "rho = %f kg/m³, T = %f K\n", S.R3.rho, S.R1.T);
++			#ifndef HAVE_CADNA_H
++			n += fprintf(f, "rho = %f kg/m³, T = %f K\n", S.SteamState_U.R3.rho, S.SteamState_U.R1.T);
++			#else
++			n += fprintf(f, "rho = %s kg/m³, T = %s K\n", strp(S.SteamState_U.R3.rho), strp(S.SteamState_U.R1.T));
++			#endif
+ 			break;
+ 		case 4:
+-			n += fprintf(f, "T = %f, x = %f\n", S.R4.T, S.R4.x);
++			#ifndef HAVE_CADNA_H
++			n += fprintf(f, "T = %f, x = %f\n", S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 			break;
++			#else
++			n += fprintf(f, "T = %s, x = %s\n", strp(S.SteamState_U.R4.T), strp(S.SteamState_U.R4.x));
++			#endif
+ 	}
+ 	return n;
+ }
+@@ -98,13 +114,13 @@ int freesteam_region(SteamState S){
+ MyDouble freesteam_T(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return S.R1.T;
++			return S.SteamState_U.R1.T;
+ 		case 2:
+-			return S.R2.T;
++			return S.SteamState_U.R2.T;
+ 		case 3:
+-			return S.R3.T;
++			return S.SteamState_U.R3.T;
+ 		case 4:
+-			return S.R4.T;
++			return S.SteamState_U.R4.T;
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_T\n");
+ 			exit(1);
+@@ -114,13 +130,13 @@ MyDouble freesteam_T(SteamState S){
+ MyDouble freesteam_p(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return S.R1.p;
++			return S.SteamState_U.R1.p;
+ 		case 2:
+-			return S.R2.p;
++			return S.SteamState_U.R2.p;
+ 		case 3:
+-			return freesteam_region3_p_rhoT(S.R3.rho, S.R3.T);
++			return freesteam_region3_p_rhoT(S.SteamState_U.R3.rho, S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_psat_T(S.R4.T);
++			return freesteam_region4_psat_T(S.SteamState_U.R4.T);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_p\n");
+ 			exit(1);
+@@ -131,13 +147,13 @@ MyDouble freesteam_p(SteamState S){
+ MyDouble freesteam_v(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_v_pT(S.R1.p,S.R1.T);
++			return freesteam_region1_v_pT(S.SteamState_U.R1.p,S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_v_pT(S.R2.p,S.R2.T);
++			return freesteam_region2_v_pT(S.SteamState_U.R2.p,S.SteamState_U.R2.T);
+ 		case 3:
+-			return 1./S.R3.rho;
++			return 1./S.SteamState_U.R3.rho;
+ 		case 4:
+-			return freesteam_region4_v_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_v_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_v\n");
+ 			exit(1);
+@@ -147,13 +163,13 @@ MyDouble freesteam_v(SteamState S){
+ MyDouble freesteam_rho(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return 1./freesteam_region1_v_pT(S.R1.p,S.R1.T);
++			return 1./freesteam_region1_v_pT(S.SteamState_U.R1.p,S.SteamState_U.R1.T);
+ 		case 2:
+-			return 1./freesteam_region2_v_pT(S.R2.p,S.R2.T);
++			return 1./freesteam_region2_v_pT(S.SteamState_U.R2.p,S.SteamState_U.R2.T);
+ 		case 3:
+-			return S.R3.rho;
++			return S.SteamState_U.R3.rho;
+ 		case 4:
+-			return 1./freesteam_region4_v_Tx(S.R4.T, S.R4.x);
++			return 1./freesteam_region4_v_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_rho\n");
+ 			exit(1);
+@@ -164,13 +180,13 @@ MyDouble freesteam_rho(SteamState S){
+ MyDouble freesteam_u(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_u_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_u_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_u_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_u_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_u_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_u_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_u_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_u_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_u\n");
+ 			exit(1);
+@@ -180,13 +196,13 @@ MyDouble freesteam_u(SteamState S){
+ MyDouble freesteam_h(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_h_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_h_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_h_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_h_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_h_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_h_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_h_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_h_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_h\n");
+ 			exit(1);
+@@ -197,13 +213,13 @@ MyDouble freesteam_h(SteamState S){
+ MyDouble freesteam_s(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_s_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_s_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_s_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_s_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_s_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_s_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_s_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_s_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_s\n");
+ 			exit(1);
+@@ -213,13 +229,13 @@ MyDouble freesteam_s(SteamState S){
+ MyDouble freesteam_cp(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_cp_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_cp_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_cp_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_cp_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_cp_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_cp_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_cp_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_cp_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_cp\n");
+ 			exit(1);
+@@ -229,13 +245,13 @@ MyDouble freesteam_cp(SteamState S){
+ MyDouble freesteam_cv(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_cv_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_cv_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_cv_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_cv_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_cv_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_cv_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ 		case 4:
+-			return freesteam_region4_cv_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_cv_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region in freesteam_cv\n");
+ 			exit(1);
+@@ -245,14 +261,14 @@ MyDouble freesteam_cv(SteamState S){
+ MyDouble freesteam_w(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+-			return freesteam_region1_w_pT(S.R1.p, S.R1.T);
++			return freesteam_region1_w_pT(S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 		case 2:
+-			return freesteam_region2_w_pT(S.R2.p, S.R2.T);
++			return freesteam_region2_w_pT(S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 		case 3:
+-			return freesteam_region3_w_rhoT(S.R3.rho,S.R3.T);
++			return freesteam_region3_w_rhoT(S.SteamState_U.R3.rho,S.SteamState_U.R3.T);
+ #if 0
+ 		case 4:
+-			return freesteam_region4_w_Tx(S.R4.T, S.R4.x);
++			return freesteam_region4_w_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ #endif
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region '%d' in freesteam_w\n",S.region);
+@@ -267,10 +283,10 @@ MyDouble freesteam_x(SteamState S){
+ 		case 2:
+ 			return 1.;
+ 		case 3:
+-			if(S.R3.rho > IAPWS97_RHOCRIT)return 0.;
++			if(S.SteamState_U.R3.rho > IAPWS97_RHOCRIT)return 0.;
+ 			return 1.;
+ 		case 4:
+-			return S.R4.x;
++			return S.SteamState_U.R4.x;
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region '%d' in freesteam_x\n",S.region);
+ 			exit(1);
+@@ -281,17 +297,17 @@ MyDouble freesteam_mu(SteamState S){
+ 	static char warned = 0;
+ 	switch(S.region){
+ 		case 1:
+-            return freesteam_mu_rhoT(1./freesteam_region1_v_pT(S.R1.p,S.R1.T), S.R1.T);
++            return freesteam_mu_rhoT(1./freesteam_region1_v_pT(S.SteamState_U.R1.p,S.SteamState_U.R1.T), S.SteamState_U.R1.T);
+ 		case 2:
+-            return freesteam_mu_rhoT(1./freesteam_region2_v_pT(S.R2.p,S.R2.T), S.R2.T);
++            return freesteam_mu_rhoT(1./freesteam_region2_v_pT(S.SteamState_U.R2.p,S.SteamState_U.R2.T), S.SteamState_U.R2.T);
+ 		case 3:
+-            return freesteam_mu_rhoT(S.R3.rho, S.R3.T);
++            return freesteam_mu_rhoT(S.SteamState_U.R3.rho, S.SteamState_U.R3.T);
+ 		case 4:
+ 			if(!warned){
+ 				fprintf(stderr,"WARNING: viscosity evaluation in region 4 is poorly defined! (this warning is only shown once)\n");
+ 				warned = 1;
+ 			}
+-            return freesteam_mu_rhoT(1./freesteam_region4_v_Tx(S.R4.T, S.R4.x), S.R4.T);
++            return freesteam_mu_rhoT(1./freesteam_region4_v_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x), S.SteamState_U.R4.T);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region '%d' in freesteam_mu\n",S.region);
+ 			exit(1);
+@@ -302,17 +318,17 @@ MyDouble freesteam_k(SteamState S){
+ 	static char warned = 0;
+ 	switch(S.region){
+ 		case 1:
+-            return freesteam_k_rhoT(1./freesteam_region1_v_pT(S.R1.p,S.R1.T), S.R1.T);
++            return freesteam_k_rhoT(1./freesteam_region1_v_pT(S.SteamState_U.R1.p,S.SteamState_U.R1.T), S.SteamState_U.R1.T);
+ 		case 2:
+-            return freesteam_k_rhoT(1./freesteam_region2_v_pT(S.R2.p,S.R2.T), S.R2.T);
++            return freesteam_k_rhoT(1./freesteam_region2_v_pT(S.SteamState_U.R2.p,S.SteamState_U.R2.T), S.SteamState_U.R2.T);
+ 		case 3:
+-            return freesteam_k_rhoT(S.R3.rho, S.R3.T);
++            return freesteam_k_rhoT(S.SteamState_U.R3.rho, S.SteamState_U.R3.T);
+ 		case 4:
+ 			if(!warned){
+ 				fprintf(stderr,"WARNING: thermal conductivity evaluation in region 4 is poorly defined! (this warning is only shown once)\n");
+ 				warned = 1;
+ 			}
+-            return freesteam_k_rhoT(1./freesteam_region4_v_Tx(S.R4.T, S.R4.x), S.R4.T);
++            return freesteam_k_rhoT(1./freesteam_region4_v_Tx(S.SteamState_U.R4.T, S.SteamState_U.R4.x), S.SteamState_U.R4.T);
+ 		default:
+ 			fprintf(stderr,"ERROR: invalid region '%d' in freesteam_k\n",S.region);
+ 			exit(1);
+Index: freesteam-2.2/common.h
+===================================================================
+--- freesteam-2.2.orig/common.h
++++ freesteam-2.2/common.h
+@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fi
+ 
+ #include "config.h"
+ 
+-#if defined(__cplusplus) && defined(HAVE_CADNA_H)
++#ifdef HAVE_CADNA_H
+ #include <cadna.h>
+ #define MyDouble double_st
+ #define MyFloat float_st
+Index: freesteam-2.2/steam_ps.c
+===================================================================
+--- freesteam-2.2.orig/steam_ps.c
++++ freesteam-2.2/steam_ps.c
+@@ -33,31 +33,51 @@ Foundation, Inc., 51 Franklin Street, Fi
+ int freesteam_bounds_ps(MyDouble p, MyDouble s, int verbose){
+ 	if(p < 0){
+ 		if(verbose){
++			#ifndef HAVE_CADNA_H
+ 			fprintf(stderr,"%s (%s:%d): WARNING p < 0 (p = %g MPa, s = %g kJ/kgK)\n"
+ 			,__func__,__FILE__,__LINE__,p/1e6,s/1e3);
++			#else
++			fprintf(stderr,"%s (%s:%d): WARNING p < 0 (p = %s MPa, s = %s kJ/kgK)\n"
++			,__func__,__FILE__,__LINE__,strp(p/1e6),strp(s/1e3));
++			#endif
+ 		}
+ 		return 1;
+ 	}
+ 	if(p > IAPWS97_PMAX){
+ 		if(verbose){
++			#ifndef HAVE_CADNA_H
+ 			fprintf(stderr,"%s (%s:%d): WARNING p > PMAX (p = %g MPa, s = %g kJ/kgK)\n"
+ 				,__func__,__FILE__,__LINE__,p/1e6,s/1e3);
++			#else
++			fprintf(stderr,"%s (%s:%d): WARNING p > PMAX (p = %s MPa, s = %s kJ/kgK)\n"
++				,__func__,__FILE__,__LINE__,strp(p/1e6),strp(s/1e3));
++			#endif
+ 		}
+ 		return 2;
+ 	}
+ 	MyDouble smin = freesteam_region1_s_pT(p, IAPWS97_TMIN);
+ 	if(s < smin){
+ 		if(verbose){
++			#ifndef HAVE_CADNA_H
+ 			fprintf(stderr,"%s (%s:%d): WARNING s < smin (p = %g MPa, s = %g kJ/kgK)\n"
+ 				,__func__,__FILE__,__LINE__,p/1e6,s/1e3);
++			#else
++			fprintf(stderr,"%s (%s:%d): WARNING s < smin (p = %s MPa, s = %s kJ/kgK)\n"
++				,__func__,__FILE__,__LINE__,strp(p/1e6),strp(s/1e3));
++			#endif
+ 		}
+ 		return 3;
+ 	}
+ 	MyDouble smax = freesteam_region2_s_pT(p, IAPWS97_TMAX);
+ 	if(s > smax){
+ 		if(verbose){
++			#ifndef HAVE_CADNA_H
+ 			fprintf(stderr,"%s (%s:%d): WARNING s > smax (p = %g MPa, s = %g kJ/kgK)\n"
+ 				,__func__,__FILE__,__LINE__,p/1e6,s/1e3);
++			#else
++			fprintf(stderr,"%s (%s:%d): WARNING s > smax (p = %s MPa, s = %s kJ/kgK)\n"
++				,__func__,__FILE__,__LINE__,strp(p/1e6),strp(s/1e3));
++			#endif
+ 		}
+ 		return 4;
+ 	}
+@@ -157,11 +177,19 @@ SteamState freesteam_set_ps(MyDouble p,
+ 				//SteamState guess = freesteam_region3_set_rhoT(322,700);
+ 				SteamState S = freesteam_solver2_region3('p','s', p, s, guess, &status);
+ 				if(status){
++				        #ifndef HAVE_CADNA_H
+ 					fprintf(stderr,"%s (%s:%d): Failed solve in region 3 for (p = %g MPa, s = %g kJ/kgK\n"
+ 						,__func__,__FILE__,__LINE__,p/1e6,s/1e3);
+ 					fprintf(stderr,"%s: Starting guess was ",__func__);
+ 					freesteam_fprint(stderr,guess);
+ 					fprintf(stderr,"%s: v = %g, T = %f => p = %g MPa, s = %g kJ/kgK\n",__func__,v,T,freesteam_p(S)/1e6,freesteam_s(S)/1e3);
++					#else
++					fprintf(stderr,"%s (%s:%d): Failed solve in region 3 for (p = %s MPa, s = %s kJ/kgK\n"
++						,__func__,__FILE__,__LINE__,strp(p/1e6),strp(s/1e3));
++					fprintf(stderr,"%s: Starting guess was ",__func__);
++					freesteam_fprint(stderr,guess);
++					fprintf(stderr,"%s: v = %s, T = %s => p = %s MPa, s = %s kJ/kgK\n",__func__,v,strp(T),strp(freesteam_p(S)/1e6),strp(freesteam_s(S)/1e3));
++					#endif
+ 					//exit(1);
+ 				}
+ 				return S;
+Index: freesteam-2.2/examples/isentropic.c
+===================================================================
+--- freesteam-2.2.orig/examples/isentropic.c
++++ freesteam-2.2/examples/isentropic.c
+@@ -8,6 +8,7 @@ of steam initially at 1 bar, 400 K, to a
+ calculates the saturation temperature for steam at that final pressure.
+ */
+ 
++#include <freesteam/common.h>
+ #include <freesteam/steam_ps.h>
+ #include <freesteam/steam_pT.h>
+ #include <freesteam/region4.h>
+@@ -22,31 +23,49 @@ int main(void){
+ 		" the saturation temperature for steam at that final pressure.\n\n"
+ 	);
+ 
+-	double T = 400.; /* in Kelvin! */
+-	double p = 1e5; /* = 1 bar */
++	MyDouble T = 400.; /* in Kelvin! */
++	MyDouble p = 1e5; /* = 1 bar */
+ 
++	#ifndef HAVE_CADNA_H
+ 	fprintf(stderr,"Initial temperature = %f K, pressure = %f bar\n", T, p/1e5);
+-
++        #else
++	fprintf(stderr,"Initial temperature = %s K, pressure = %s bar\n", strp(T), strp(p/1e5));
++	#endif
++	
+ 	/* set a steam state of 1 bar, 400 K */
+ 	SteamState S = freesteam_set_pT(1e5, 400);
+ 
+-	double s = freesteam_s(S);
++	MyDouble s = freesteam_s(S);
++	#ifndef HAVE_CADNA_H
+ 	fprintf(stderr,"Entropy at initial state is %f kJ/kgK\n",s/1e3);
++        #else
++	fprintf(stderr,"Entropy at initial state is %s kJ/kgK\n",strp(s/1e3));
++        #endif
+ 
+ 	/* calculate a steam state with entropy from above and 10 bar pressure */
+ 	SteamState S2 = freesteam_set_ps(10e5, s);
+ 
+-	double T2 = freesteam_T(S2);
+-	double p2 = freesteam_p(S2);
++	MyDouble T2 = freesteam_T(S2);
++	MyDouble p2 = freesteam_p(S2);
+ 
+ 	/* output the new temperature */
++	#ifndef HAVE_CADNA_H
+ 	fprintf(stderr,"New temperature is %f K at %f bar\n", T2, p2/1e5);
+ 
+ 	fprintf(stderr,"Check: final entropy is %f kJ/kgK\n", freesteam_s(S2)/1e3);
++        #else
++	fprintf(stderr,"New temperature is %s K at %s bar\n", strp(T2), strp(p2/1e5));
+ 
++	fprintf(stderr,"Check: final entropy is %s kJ/kgK\n", strp(freesteam_s(S2)/1e3));
++	#endif
++	
+ 	/* saturation temperature at final pressure */
+-	double Tsat = freesteam_region4_Tsat_p(p2);
++	MyDouble Tsat = freesteam_region4_Tsat_p(p2);
++	#ifndef HAVE_CADNA_H
+ 	fprintf(stderr,"Saturation temperature at %f bar is %f K.\n\n",p2/1e5, Tsat);
++	#else
++	fprintf(stderr,"Saturation temperature at %s bar is %s K.\n\n",strp(p2/1e5), strp(Tsat));
++	#endif
+ 
+ 	return 0;
+ }
+Index: freesteam-2.2/compat.h
+===================================================================
+--- freesteam-2.2.orig/compat.h
++++ freesteam-2.2/compat.h
+@@ -379,8 +379,8 @@ class SteamCalculator{
+ 	public:
+ 		SteamCalculator(){
+ 			S.region = 1;
+-			S.R1.T = 300;
+-			S.R1.p = 1e5;
++			S.SteamState_U.R1.T = 300;
++			S.SteamState_U.R1.p = 1e5;
+ 		}
+ 
+ 		SteamCalculator(const SteamState &S1){
+@@ -424,26 +424,26 @@ class SteamCalculator{
+ 
+ 		inline void setRegion1_pT(const Pressure &p, const Temperature &T){
+ 			S.region = 1;
+-			S.R1.p = p;
+-			S.R1.T = T;
++			S.SteamState_U.R1.p = p;
++			S.SteamState_U.R1.T = T;
+ 		}
+ 
+ 		inline void setRegion2_pT(const Pressure &p, const Temperature &T){
+ 			S.region = 2;
+-			S.R2.p = p;
+-			S.R2.T = T;
++			S.SteamState_U.R2.p = p;
++			S.SteamState_U.R2.T = T;
+ 		}
+ 
+ 		inline void setRegion4_Tx(const Temperature &T, const Num &x){
+ 			S.region = 4;
+-			S.R4.T = T;
+-			S.R4.x = x;
++			S.SteamState_U.R4.T = T;
++			S.SteamState_U.R4.x = x;
+ 		}
+ 
+ 		inline void setRegion3_rhoT(const Density &rho, const Temperature &T){
+ 			S.region = 3;
+-			S.R3.T = T;
+-			S.R3.rho = rho;
++			S.SteamState_U.R3.T = T;
++			S.SteamState_U.R3.rho = rho;
+ 		}
+ 
+ 		// Methods to return properties and state

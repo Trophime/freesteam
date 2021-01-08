@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+#
+# This script is part of the main freesteam build system, and doesn't have
+# anything to do with building the example code. See the 'SConstruct' file
+# in this file instead.
+
+Import('env')
+
+files = ['SConstruct','isentropic.c','README.txt']
+
+env['installedfiles'] += [env.Install("${INSTALL_ROOT}$INSTALL_SHARE/freesteam/examples",i) for i in files]
+
+

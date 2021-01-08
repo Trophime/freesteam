@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=/usr
+libdir=/usr/lib/x86_64-linux-gnu
+includedir=/usr/include/freesteam
+
+Name: freesteam
+Description: GNU Scientific Library
+Version: 2.1
+Libs: -lgsl -lgslcblas -lm  -lfreesteam
+Cflags: -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security 

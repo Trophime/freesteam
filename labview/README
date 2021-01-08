@@ -1,0 +1,16 @@
+The LabVIEW port consists of wrapper functions around freesteam's high-level
+functionality since representing the SteamState struct in LabVIEW proved to be
+rather nightmarish.  Importing the fsteam.dll into LabVIEW results in easy
+property lookups.
+
+The fsteam.dll shared library can be compiled from source (fsteam.c & fsteam.h)
+with:
+
+$gcc -Wall -shared fsteam.c /path/to/freesteam.dll -I/path/containing/steam.h -o
+fsteam.dll
+
+The LabVIEW library file (fsteam.lvlib) and VIs (*.vi) have also been included
+for quickstart applications.  The files are compatible with LabVIEW versions 8.0
+and newer.  Copying the fsteam folder containing the LabVIEW files into the
+C:\Program Files\National Instruments\LabVIEW\user.lib\ folder will create a
+subpalette on LabVIEW's functions palette.

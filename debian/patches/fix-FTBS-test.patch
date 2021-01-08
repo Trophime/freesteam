@@ -1,0 +1,80 @@
+Description: <short summary of the patch>
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ freesteam (2.2-7) unstable; urgency=medium
+ .
+   * d/patches: add support for cmake
+   * d/control: move to cmake
+Author: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2019-04-16
+
+Index: freesteam-2.2/test.c
+===================================================================
+--- freesteam-2.2.orig/test.c
++++ freesteam-2.2/test.c
+@@ -437,10 +437,10 @@ void test_ph_derivs(MyDouble p, MyDouble
+ 		case 3: Sdh = freesteam_region3_set_rhoT(1./freesteam_region3_v_ph(p,h+dh),freesteam_region3_T_ph(p,h+dh)); break;
+ 		case 4: 
+ 			{
+-				MyDouble hf = freesteam_region4_h_Tx(S.R4.T,0.);
+-				MyDouble hg = freesteam_region4_h_Tx(S.R4.T,1.);
++				MyDouble hf = freesteam_region4_h_Tx(S.SteamState_U.R4.T,0.);
++				MyDouble hg = freesteam_region4_h_Tx(S.SteamState_U.R4.T,1.);
+ 				MyDouble x1 = ((h+dh) - hf)/(hg - hg);
+-				Sdh = freesteam_region4_set_Tx(S.R4.T,x1);
++				Sdh = freesteam_region4_set_Tx(S.SteamState_U.R4.T,x1);
+ 			}
+ 	}
+ 
+@@ -510,7 +510,7 @@ void testsolver2(void){
+ 	MyDouble h = freesteam_h(S);
+ 	int status;
+ 	SteamState S2;
+-	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (rho = %g, T = %g)\n",p/1e6, h/1e3,S.R3.rho, S.R3.T);
++	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (rho = %g, T = %g)\n",p/1e6, h/1e3,S.SteamState_U.R3.rho, S.SteamState_U.R3.T);
+ 	SteamState guess = freesteam_region3_set_rhoT(1./0.00317, 673.15);	
+ 	S2 = freesteam_solver2_region3('p','h',p,h,guess,&status);
+ 	assert(status==0);
+@@ -521,7 +521,7 @@ void testsolver2(void){
+ 	S = freesteam_region4_set_Tx(440., 0.9);
+ 	p = freesteam_p(S);
+ 	h = freesteam_h(S);
+-	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 4: T = %g, x = %g)\n",p/1e6, h/1e3,S.R4.T, S.R4.x);
++	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 4: T = %g, x = %g)\n",p/1e6, h/1e3,S.SteamState_U.R4.T, S.SteamState_U.R4.x);
+ 	guess = freesteam_region4_set_Tx(IAPWS97_TCRIT - 1.,0.5);
+ 	S2 = freesteam_solver2_region4('p','h',p,h,guess,&status);
+ 	assert(status==0);
+@@ -532,7 +532,7 @@ void testsolver2(void){
+ 	S = freesteam_region2_set_pT(1e5, 273.15+180.);
+ 	p = freesteam_p(S);
+ 	h = freesteam_h(S);
+-	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 2: p = %g, T = %g)\n",p/1e6, h/1e3,S.R2.p, S.R2.T);
++	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 2: p = %g, T = %g)\n",p/1e6, h/1e3,S.SteamState_U.R2.p, S.SteamState_U.R2.T);
+ 	guess = freesteam_region2_set_pT(200e5,273.15+500.);
+ 	S2 = freesteam_solver2_region2('p','h',p,h,guess,&status);
+ 	assert(status==0);
+@@ -543,7 +543,7 @@ void testsolver2(void){
+ 	S = freesteam_region1_set_pT(1e5, 273.15+40.);
+ 	p = freesteam_p(S);
+ 	h = freesteam_h(S);
+-	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 1: p = %g, T = %g)\n",p/1e6, h/1e3,S.R1.p, S.R1.T);
++	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (region 1: p = %g, T = %g)\n",p/1e6, h/1e3,S.SteamState_U.R1.p, S.SteamState_U.R1.T);
+ 	guess = freesteam_region1_set_pT(200e5,273.15+20.);
+ 	S2 = freesteam_solver2_region1('p','h',p,h,guess,&status);
+ 	assert(status==0);

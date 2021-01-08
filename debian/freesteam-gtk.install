@@ -1,0 +1,6 @@
+usr/bin/freesteam-gtk
+usr/share/applications
+usr/share/icons
+usr/share/freesteam/*.glade
+usr/share/freesteam/*.png
+

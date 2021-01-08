@@ -1,0 +1,207 @@
+Description: port to cmake build system
+ TODO: Put a short summary on the line above and replace this paragraph
+ with a longer explanation of this change. Complete the meta-information
+ with other relevant fields (see below for details). To make it easier, the
+ information below has been extracted from the changelog. Adjust it or drop
+ it.
+ .
+ freesteam (2.2-7) unstable; urgency=medium
+ .
+   * d/patches: add support for cmake
+   * d/control: move to cmake
+Author: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: https://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: 2019-04-17
+
+Index: freesteam-2.2/CMakeLists.txt
+===================================================================
+--- /dev/null
++++ freesteam-2.2/CMakeLists.txt
+@@ -0,0 +1,65 @@
++cmake_minimum_required(VERSION 3.2)
++
++project(freesteam VERSION 2.2.1 )
++
++set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules" ${CMAKE_MODULE_PATH})
++configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
++
++option( BUILD_TESTING "Build test" ON )
++option( FREESTEAM_ENABLE_EXAMPLES "Enable examples" ON )
++option( FREESTEAM_ENABLE_PYTHON "Enable Python Support" ON )
++
++if (NOT FREESTEAM_PYTHON_VERSION)
++  set(FREESTEAM_PYTHON_VERSION 3)
++  MESSAGE(STATUS "Setting default PYTHON version to 3")
++endif()
++
++set(SRCS region1.c region2.c region3.c region4.c steam_ph.c
++	steam.c backwards.c b23.c common.c derivs.c zeroin.c
++	steam_ps.c solver2.c steam_pT.c steam_pu.c steam_Ts.c
++	steam_Tx.c surftens.c
++	bounds.c steam_pv.c viscosity.c thcond.c )
++
++configure_file(config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.h)
++
++set(HEADERS backwards.h backwards_impl.h bounds.h common.h compat.h derivs.h region1.h region2.h region3.h region4.h solver2.h steam.h steam_ph.h steam_ps.h steam_pT.h steam_pu.h steam_pv.h steam_Ts.h steam_Tx.h steam_uv.h surftens.h thcond.h viscosity.h zeroin.h config.h)
++
++find_package(gsl REQUIRED)
++include_directories(${GSL_INCLUDES})
++include_directories(${CMAKE_CURRENT_SOURCE_DIR})
++
++# find_package(gtk2)
++# find_package(ascend)
++
++add_library( freesteam SHARED ${SRCS} )
++set_target_properties( freesteam PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 2 )
++target_link_libraries( freesteam m ${GSL_LIBRARIES})
++
++# install
++install( TARGETS freesteam DESTINATION ${INSTALL_LIB_DIR} ) #lib
++install( FILES ${HEADERS} DESTINATION include/freesteam )
++
++if (BUILD_TESTING)
++  add_executable( mytest test.c )
++  target_link_libraries( mytest  freesteam ${GSL_LIBRARIES})
++
++  enable_testing()
++  add_test(basic ${CMAKE_BINARY_DIR}/mytest)
++endif()
++
++if (FREESTEAM_EXAMPLES)
++  add_subdirectory(examples)
++endif()
++
++# Add python bindings
++if (FREESTEAM_ENABLE_PYTHON)
++  FIND_PACKAGE(PythonInterp ${FREESTEAM_PYTHON_VERSION}  REQUIRED)
++  if(PYTHONINTERP_FOUND)
++    message(STATUS "[freesteam] Found python version ${PYTHON_VERSION}")
++  else ()
++    message(ERROR "[freesteam] No python version ${PYTHON_VERSION}")
++  endif()
++  FIND_PACKAGE(PythonLibs ${FREESTEAM_PYTHON_VERSION} REQUIRED)
++  add_subdirectory(python)
++endif()
++
+Index: freesteam-2.2/cmake/modules/Findgsl.cmake
+===================================================================
+--- /dev/null
++++ freesteam-2.2/cmake/modules/Findgsl.cmake
+@@ -0,0 +1,58 @@
++# - Find GSL
++# Find the native GSL includes and library
++# You can specify these variables to search
++#
++#  GSL_DIR
++#
++# The module provides these variables:
++#
++#  GSL_INCLUDES_DIRS - where to find headers.
++#  GSL_LIBRARY_DIRS  - where to find libraries
++#  GSL_LIBRARIES     - List of libraries when using GSL.
++#  GSL_FOUND         - True if GSL found.
++
++
++find_path (GSL_INCLUDE_DIRS NAMES gsl/gsl_math.h
++    HINTS $ENV{GSL_DIR}/include ${GSL_DIR}/include
++)
++
++find_library (GSL_LIBRARY NAME gsl
++    HINTS $ENV{GSL_DIR}/lib ${GSL_DIR}/lib
++)
++SET(GSL_LIBRARIES "${GSL_LIBRARY}")
++
++find_library (GSL_CBLAS_LIBRARY NAMES gslcblas
++    HINTS $ENV{GSL_DIR}/lib ${GSL_DIR}/lib
++)
++LIST( APPEND GSL_LIBRARIES "${GSL_CBLAS_LIBRARY}")
++MESSAGE(STATUS "GSL_LIBRARIES=${GSL_LIBRARIES}")
++set( GSL_LIBRARIES ${GSL_LIBRARIES} CACHE INTERNAL "")
++
++# # check gsl_cadna.h to active cadna support
++# find_path (GSL_CADNA_INCLUDE_DIRS NAMES gsl/gsl_cadna.h
++#     HINTS $ENV{GSL_DIR}/include ${GSL_DIR}/include
++# )
++# if (GSL_CADNA_INCLUDE_DIRS)
++#   MESSAGE(STATUS "gsl is build with cadna support")
++#   add_definitions(-DGSL_HAS_CADNA)
++
++#   # TODO: should add cadna to library
++#   Find_package(Cadna)
++# endif()
++
++
++set( GSL_LIBRARY_DIRS "")
++foreach( LIB ${GSL_LIBRARIES} )
++    get_filename_component( DIR "${LIB}" DIRECTORY )
++    list( APPEND GSL_LIBRARY_DIRS "${DIR}" )
++    MESSAGE(STATUS "LIB=${LIB}")
++endforeach()
++list( REMOVE_DUPLICATES GSL_LIBRARY_DIRS )
++set( GSL_LIBRARY_DIRS ${GSL_LIBRARY_DIRS} CACHE INTERNAL "")
++
++# Backward compat
++set( GSL_LIB ${GSL_LIBRARIES} )
++set( GSL_INCLUDES "${GSL_INCLUDE_DIRS}" )
++
++include (FindPackageHandleStandardArgs)
++find_package_handle_standard_args(GSL REQUIRED_VARS GSL_LIBRARIES GSL_INCLUDE_DIRS GSL_LIBRARY_DIRS GSL_INCLUDES GSL_LIB)
+Index: freesteam-2.2/examples/CMakeLists.txt
+===================================================================
+--- /dev/null
++++ freesteam-2.2/examples/CMakeLists.txt
+@@ -0,0 +1,4 @@
++include_directories(${CMAKE_CURRENT_SOURCE_DIR})
++
++add-executable(isentropic isentropic.c)
++target_link_libraries( test  freesteam ${GSL_LIBRARIES})
+Index: freesteam-2.2/python/CMakeLists.txt
+===================================================================
+--- /dev/null
++++ freesteam-2.2/python/CMakeLists.txt
+@@ -0,0 +1,34 @@
++cmake_policy(SET CMP0078 OLD)
++
++find_package(SWIG )
++if (SWIG_FOUND)
++  INCLUDE(${SWIG_USE_FILE})
++
++  if(PYTHONLIBS_VERSION_STRING MATCHES "^2.*$" )
++    set(CMAKE_SWIG_FLAGS -classic)
++  else()
++    set(CMAKE_SWIG_FLAGS -py3)
++  endif()
++
++  include_directories(${PYTHON_INCLUDE_DIRS})
++
++  set(PYFREESTEAM_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/dist-packages/)
++
++  set (UseSWIG_TARGET_NAME_PREFERENCE LEGACY)
++  set_property(SOURCE freesteam.i PROPERTY C ON)
++
++  # swig_add_library(freesteam TYPE SHARED LANGUAGE python SOURCES freesteam.i)
++  swig_add_library(freesteam LANGUAGE python SOURCES freesteam.i)
++
++  # MESSAGE(STATUS "SWIG SWIG_MODULE_freesteam_REAL_NAME=${SWIG_MODULE_freesteam_REAL_NAME}")
++  # MESSAGE(STATUS "GSL_LIBRARIES=${GSL_LIBRARIES}")
++
++  #swig_link_libraries(freesteam freesteam ${GSL_LIBRARIES} ${PYTHON_LIBRARIES})
++  set_property(TARGET ${SWIG_MODULE_freesteam_REAL_NAME} PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
++  TARGET_LINK_LIBRARIES(${SWIG_MODULE_freesteam_REAL_NAME}  freesteam ${GSL_LIBRARIES} ${PYTHON_LIBRARIES})
++  install(TARGETS ${SWIG_MODULE_freesteam_REAL_NAME} DESTINATION ${PYFREESTEAM_INSTALL_DIR})
++  install(FILES ${CMAKE_BINARY_DIR}/python/freesteam.py DESTINATION ${PYFREESTEAM_INSTALL_DIR})
++
++  enable_testing()
++  add_test(test1 ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test.py)
++endif()

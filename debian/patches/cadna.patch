@@ -1,0 +1,4248 @@
+Index: freesteam-2.1/b23.c
+===================================================================
+--- freesteam-2.1.orig/b23.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/b23.c	2013-06-27 08:49:58.000000000 +0200
+@@ -22,20 +22,20 @@
+ 
+ #include <math.h>
+ 
+-const double B23_N[6] = { 0, 0.34805185628969E+03, -0.11671859879975E+01
++const MyDouble B23_N[6] = { 0, 0.34805185628969E+03, -0.11671859879975E+01
+ 	, 0.10192970039326E-02, 0.57254459862746E+03, 0.13918839778870E+02
+ };
+ 
+-const double B23_PSTAR = 1e6;
++const MyDouble B23_PSTAR = 1e6;
+ 
+-double freesteam_b23_p_T(double T){
++MyDouble freesteam_b23_p_T(MyDouble T){
+ #define theta T
+ 	return (B23_N[1] + B23_N[2] * theta + B23_N[3] * SQ(theta)) * B23_PSTAR;
+ #undef theta
+ }
+ 
+-double freesteam_b23_T_p(double p){
+-	double pi = p / B23_PSTAR;
++MyDouble freesteam_b23_T_p(MyDouble p){
++	MyDouble pi = p / B23_PSTAR;
+ 	return B23_N[4] + sqrt((pi - B23_N[5])/B23_N[3]) /* * 1{K} */;
+ }
+ 
+Index: freesteam-2.1/b23.h
+===================================================================
+--- freesteam-2.1.orig/b23.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/b23.h	2013-06-27 08:50:12.000000000 +0200
+@@ -21,8 +21,8 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_b23_p_T(double T);
+-FREESTEAM_DLL double freesteam_b23_T_p(double p);
++FREESTEAM_DLL MyDouble freesteam_b23_p_T(MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_b23_T_p(MyDouble p);
+ 
+ #endif
+ 
+Index: freesteam-2.1/backwards.c
+===================================================================
+--- freesteam-2.1.orig/backwards.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/backwards.c	2013-06-27 08:49:59.000000000 +0200
+@@ -38,7 +38,7 @@
+ 
+ typedef struct{
+ 	int I, J;
+-	double n;
++	MyDouble n;
+ } BackwardsData;
+ 
+ /**
+@@ -69,8 +69,8 @@
+ 
+ const unsigned REGION1_TPH_MAX = sizeof(REGION1_TPH_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION1_TPH_HSTAR = 2500e3; /* J/kg */
+-const double REGION1_TPH_PSTAR = 1e6; /* Pa */
++const MyDouble REGION1_TPH_HSTAR = 2500e3; /* J/kg */
++const MyDouble REGION1_TPH_PSTAR = 1e6; /* Pa */
+ 
+ /**
+ 	Backward equation for temperature in terms of pressure and enthalpy
+@@ -80,12 +80,12 @@
+ 	@param h enthalpy in J/kg
+ 	@return temperature in K
+ */
+-double freesteam_region1_T_ph(double p, double h){
+-	double pi = p / REGION1_TPH_PSTAR;
+-	double e1 = 1. + (h / REGION1_TPH_HSTAR);
++MyDouble freesteam_region1_T_ph(MyDouble p, MyDouble h){
++	MyDouble pi = p / REGION1_TPH_PSTAR;
++	MyDouble e1 = 1. + (h / REGION1_TPH_HSTAR);
+ 	unsigned i;
+ 	BackwardsData *d;
+-	double sum = 0;
++	MyDouble sum = 0;
+ 	for(i=0, d = REGION1_TPH_DATA; i<REGION1_TPH_MAX; ++i, ++d){
+ 		/* TODO some optimisations are possible here with pow(pi,...) */
+ 		sum += d->n * ipow(pi,d->I) * ipow(e1, d->J);
+@@ -215,10 +215,10 @@
+ 
+ const unsigned REGION2C_TPH_MAX = sizeof(REGION2C_TPH_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION2AB_P = 4.e6; /* Pa */
++const MyDouble REGION2AB_P = 4.e6; /* Pa */
+ 
+-const double REGION2_HSTAR = 2000e3;
+-const double REGION2_PSTAR = 1.e6;
++const MyDouble REGION2_HSTAR = 2000e3;
++const MyDouble REGION2_PSTAR = 1.e6;
+ 
+ /* REGION2_B2BC_PH defined in backwards_impl.h */
+ 
+@@ -231,16 +231,16 @@
+ 	@param h enthalpy in J/kg
+ 	@return temperature in K
+ */
+-double freesteam_region2_T_ph(double p, double h){
++MyDouble freesteam_region2_T_ph(MyDouble p, MyDouble h){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double eta = h / REGION2_HSTAR;
+-	double pi = p / REGION2_PSTAR;
+-	double pi1, eta1;
++	MyDouble eta = h / REGION2_HSTAR;
++	MyDouble pi = p / REGION2_PSTAR;
++	MyDouble pi1, eta1;
+ 	BackwardsData *d;
+ 	unsigned i, n;
+-	double sum = 0;
++	MyDouble sum = 0;
+ 	if(p < REGION2AB_P){
+ 		//fprintf(stderr,"region 2a\n");
+ 		pi1 = pi; eta1 = eta - 2.1;
+@@ -349,13 +349,13 @@
+ 
+ /* REGION3_B3AB_PH(P,H) boundary test declared in backwards_impl.h */
+ 
+-const double REGION3A_TPH_HSTAR = 2300e3;
+-const double REGION3A_TPH_PSTAR = 100.e6;
+-const double REGION3A_TPH_TSTAR = 760;
+-
+-const double REGION3B_TPH_HSTAR = 2800e3;
+-const double REGION3B_TPH_PSTAR = 100.e6;
+-const double REGION3B_TPH_TSTAR = 860;
++const MyDouble REGION3A_TPH_HSTAR = 2300e3;
++const MyDouble REGION3A_TPH_PSTAR = 100.e6;
++const MyDouble REGION3A_TPH_TSTAR = 760;
++
++const MyDouble REGION3B_TPH_HSTAR = 2800e3;
++const MyDouble REGION3B_TPH_PSTAR = 100.e6;
++const MyDouble REGION3B_TPH_TSTAR = 860;
+ 
+ /**
+ 	Backward equation for temperature in terms of pressure and enthalpy
+@@ -369,15 +369,15 @@
+ 	@param h enthalpy in J/kg
+ 	@return temperature in K
+ */
+-double freesteam_region3_T_ph(double p, double h){
++MyDouble freesteam_region3_T_ph(MyDouble p, MyDouble h){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double pi1, eta1;
+-	double Tstar;
++	MyDouble pi1, eta1;
++	MyDouble Tstar;
+ 	BackwardsData *d;
+ 	unsigned i, n;
+-	double sum = 0;
++	MyDouble sum = 0;
+ 	if(REGION3_B3AB_PH(p,h) <= 0.){
+ 		/* sub-region 3a */
+ 		pi1 = p/REGION3A_TPH_PSTAR + 0.240; eta1 = h/REGION3A_TPH_HSTAR - 0.615;
+@@ -476,13 +476,13 @@
+ 
+ const unsigned REGION3B_VPH_MAX = sizeof(REGION3B_VPH_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION3A_VPH_HSTAR = 2100e3; /* J/kg */
+-const double REGION3A_VPH_PSTAR = 100.e6; /* Pa */
+-const double REGION3A_VPH_VSTAR = 0.0028; /* m³/kg */
+-
+-const double REGION3B_VPH_HSTAR = 2800e3;
+-const double REGION3B_VPH_PSTAR = 100.e6;
+-const double REGION3B_VPH_VSTAR = 0.0088;
++const MyDouble REGION3A_VPH_HSTAR = 2100e3; /* J/kg */
++const MyDouble REGION3A_VPH_PSTAR = 100.e6; /* Pa */
++const MyDouble REGION3A_VPH_VSTAR = 0.0028; /* m³/kg */
++
++const MyDouble REGION3B_VPH_HSTAR = 2800e3;
++const MyDouble REGION3B_VPH_PSTAR = 100.e6;
++const MyDouble REGION3B_VPH_VSTAR = 0.0088;
+ 
+ /**
+ 	Backward equation for specific volume in terms of pressure and enthalpy
+@@ -496,15 +496,15 @@
+ 	@param h enthalpy in J/kg
+ 	@return temperature in K
+ */
+-double freesteam_region3_v_ph(double p, double h){
++MyDouble freesteam_region3_v_ph(MyDouble p, MyDouble h){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double pi1, eta1;
++	MyDouble pi1, eta1;
+ 	BackwardsData *d;
+ 	unsigned i, n;
+-	double sum = 0;
+-	double vstar;
++	MyDouble sum = 0;
++	MyDouble vstar;
+ 	if(REGION3_B3AB_PH(p,h) <= 0.){
+ 		/* sub-region 3a */
+ 		pi1 = p/REGION3A_VPH_PSTAR + 0.128; eta1 = h/REGION3A_VPH_HSTAR - 0.727;
+@@ -549,18 +549,18 @@
+ 
+ const unsigned REGION3_PSATH_MAX = sizeof(REGION3_PSATH_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION3_PSATH_HSTAR = 2600e3;
+-const double REGION3_PSATH_PSTAR = 22.e6;
++const MyDouble REGION3_PSATH_HSTAR = 2600e3;
++const MyDouble REGION3_PSATH_PSTAR = 22.e6;
+ 
+-double freesteam_region3_psat_h(double h){
++MyDouble freesteam_region3_psat_h(MyDouble h){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+ 	BackwardsData *d, *e = REGION3_PSATH_DATA + REGION3_PSATH_MAX;
+-	double eta = h / REGION3_PSATH_HSTAR;
+-	double eta1 = eta - 1.02;
+-	double eta2 = eta - 0.608;
+-	double sum = 0;
++	MyDouble eta = h / REGION3_PSATH_HSTAR;
++	MyDouble eta1 = eta - 1.02;
++	MyDouble eta2 = eta - 0.608;
++	MyDouble sum = 0;
+ 	for(d = REGION3_PSATH_DATA; d<e; ++d){
+ 		sum += d->n * ipow(eta1, d->I) * ipow(eta2, d->J);
+ 	}
+@@ -586,18 +586,18 @@
+ 
+ const unsigned REGION3_PSATS_MAX = sizeof(REGION3_PSATS_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION3_PSATS_SSTAR = 5.2e3;
+-const double REGION3_PSATS_PSTAR = 22.e6;
++const MyDouble REGION3_PSATS_SSTAR = 5.2e3;
++const MyDouble REGION3_PSATS_PSTAR = 22.e6;
+ 
+-double freesteam_region3_psat_s(double s){
++MyDouble freesteam_region3_psat_s(MyDouble s){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+ 	BackwardsData *d, *e = REGION3_PSATS_DATA + REGION3_PSATS_MAX;
+-	double sig = s / REGION3_PSATS_SSTAR;
+-	double sig1 = sig - 1.03;
+-	double sig2 = sig - 0.699;
+-	double sum = 0;
++	MyDouble sig = s / REGION3_PSATS_SSTAR;
++	MyDouble sig1 = sig - 1.03;
++	MyDouble sig2 = sig - 0.699;
++	MyDouble sum = 0;
+ 	for(d = REGION3_PSATS_DATA; d<e; ++d){
+ 		sum += d->n * ipow(sig1, d->I) * ipow(sig2, d->J);
+ 	}
+@@ -686,15 +686,15 @@
+ 
+ const unsigned REGION3B_TPS_MAX = sizeof(REGION3B_TPS_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION3A_TPS_TSTAR = 760.; /* K */
+-const double REGION3A_TPS_SSTAR = 4.4e3; /* J/kgK */
+-const double REGION3A_TPS_PSTAR = 100e6; /* Pa */
+-
+-const double REGION3B_TPS_TSTAR = 860.; /* K */
+-const double REGION3B_TPS_SSTAR = 5.3e3; /* J/kgK */
+-const double REGION3B_TPS_PSTAR = 100e6; /* Pa */
++const MyDouble REGION3A_TPS_TSTAR = 760.; /* K */
++const MyDouble REGION3A_TPS_SSTAR = 4.4e3; /* J/kgK */
++const MyDouble REGION3A_TPS_PSTAR = 100e6; /* Pa */
++
++const MyDouble REGION3B_TPS_TSTAR = 860.; /* K */
++const MyDouble REGION3B_TPS_SSTAR = 5.3e3; /* J/kgK */
++const MyDouble REGION3B_TPS_PSTAR = 100e6; /* Pa */
+ 
+-const double REGION3AB_SC = 4.41202148223476e3; /* J/kgK */
++const MyDouble REGION3AB_SC = 4.41202148223476e3; /* J/kgK */
+ 
+ /**
+ 	Backward equation for temperature in terms of pressure and entropy
+@@ -708,15 +708,15 @@
+ 	@param s specific entropy in J/kgK
+ 	@return temperature in K
+ */
+-double freesteam_region3_T_ps(double p, double s){
++MyDouble freesteam_region3_T_ps(MyDouble p, MyDouble s){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double p1, s1;
+-	double Tstar;
++	MyDouble p1, s1;
++	MyDouble Tstar;
+ 	BackwardsData *d;
+ 	unsigned i, n;
+-	double sum = 0;
++	MyDouble sum = 0;
+ 	if(s < REGION3AB_SC){
+ 		/* sub-region 3a */
+ 		p1 = p/REGION3A_TPS_PSTAR + 0.240; s1 = s/REGION3A_TPS_SSTAR - 0.703;
+@@ -814,13 +814,13 @@
+ 
+ const unsigned REGION3B_VPS_MAX = sizeof(REGION3B_VPS_DATA)/sizeof(BackwardsData);
+ 
+-const double REGION3A_VPS_VSTAR = 0.0028; /* kg/m³ */
+-const double REGION3A_VPS_SSTAR = 4.4e3; /* J/kgK */
+-const double REGION3A_VPS_PSTAR = 100e6; /* Pa */
+-
+-const double REGION3B_VPS_VSTAR = 0.0088; /* kg/m³ */
+-const double REGION3B_VPS_SSTAR = 5.3e3; /* J/kgK */
+-const double REGION3B_VPS_PSTAR = 100e6; /* Pa */
++const MyDouble REGION3A_VPS_VSTAR = 0.0028; /* kg/m³ */
++const MyDouble REGION3A_VPS_SSTAR = 4.4e3; /* J/kgK */
++const MyDouble REGION3A_VPS_PSTAR = 100e6; /* Pa */
++
++const MyDouble REGION3B_VPS_VSTAR = 0.0088; /* kg/m³ */
++const MyDouble REGION3B_VPS_SSTAR = 5.3e3; /* J/kgK */
++const MyDouble REGION3B_VPS_PSTAR = 100e6; /* Pa */
+ 
+ /**
+ 	Backward equation for temperature in terms of pressure and entropy
+@@ -834,15 +834,15 @@
+ 	@param s specific entropy in J/kgK
+ 	@return temperature in K
+ */
+-double freesteam_region3_v_ps(double p, double s){
++MyDouble freesteam_region3_v_ps(MyDouble p, MyDouble s){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double p1, s1;
+-	double vstar;
++	MyDouble p1, s1;
++	MyDouble vstar;
+ 	BackwardsData *d;
+ 	unsigned i, n;
+-	double sum = 0;
++	MyDouble sum = 0;
+ 	if(s < REGION3AB_SC){
+ 		/* sub-region 3a */
+ 		//fprintf(stderr,"3A\n");
+Index: freesteam-2.1/backwards.h
+===================================================================
+--- freesteam-2.1.orig/backwards.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/backwards.h	2013-06-27 08:50:13.000000000 +0200
+@@ -21,15 +21,15 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_region1_T_ph(double p, double h);
+-FREESTEAM_DLL double freesteam_region2_T_ph(double p, double h);
+-FREESTEAM_DLL double freesteam_region3_T_ph(double p, double h);
+-FREESTEAM_DLL double freesteam_region3_v_ph(double p, double h);
+-FREESTEAM_DLL double freesteam_region3_psat_h(double h);
+-FREESTEAM_DLL double freesteam_region3_psat_s(double s);
++FREESTEAM_DLL MyDouble freesteam_region1_T_ph(MyDouble p, MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region2_T_ph(MyDouble p, MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region3_T_ph(MyDouble p, MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region3_v_ph(MyDouble p, MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region3_psat_h(MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region3_psat_s(MyDouble s);
+ 
+-FREESTEAM_DLL double freesteam_region3_T_ps(double p, double h);
+-FREESTEAM_DLL double freesteam_region3_v_ps(double p, double h);
++FREESTEAM_DLL MyDouble freesteam_region3_T_ps(MyDouble p, MyDouble h);
++FREESTEAM_DLL MyDouble freesteam_region3_v_ps(MyDouble p, MyDouble h);
+ 
+ #endif
+ 
+Index: freesteam-2.1/bounds.c
+===================================================================
+--- freesteam-2.1.orig/bounds.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/bounds.c	2013-06-27 08:49:59.000000000 +0200
+@@ -32,16 +32,16 @@
+ #include <stdlib.h>
+ 
+ typedef struct{
+-	double p, T;
++	MyDouble p, T;
+ } SteamPTData;
+ 
+-static double pT3_fn(double rho, void *user_data){
++static MyDouble pT3_fn(MyDouble rho, void *user_data){
+ #define D ((SteamPTData *)user_data)
+ 	return D->p - freesteam_region3_p_rhoT(rho, D->T);
+ #undef D
+ }
+ 
+-SteamState freesteam_bound_pmax_T(double T){
++SteamState freesteam_bound_pmax_T(MyDouble T){
+ 	SteamState S;
+ 	if(T <= REGION1_TMAX){
+ 		S.region = 1;
+@@ -55,10 +55,10 @@
+ 		S.region = 3;
+ 		S.R3.T = T;
+ 		SteamPTData D = {IAPWS97_PMAX, T};
+-		double tol = 1e-7;
+-		double sol, err = 0;
+-		double lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
+-		double ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
++		MyDouble tol = 1e-7;
++		MyDouble sol, err = 0;
++		MyDouble lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
++		MyDouble ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
+ 
+ 		if(zeroin_solve(&pT3_fn, &D, lb, ub, tol, &sol, &err)){
+ 			fprintf(stderr,"%s (%s:%d): failed to solve for rho\n",__func__,__FILE__,__LINE__);
+Index: freesteam-2.1/bounds.h
+===================================================================
+--- freesteam-2.1.orig/bounds.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/bounds.h	2013-06-27 08:50:14.000000000 +0200
+@@ -25,7 +25,7 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL SteamState freesteam_bound_pmax_T(double T);
++FREESTEAM_DLL SteamState freesteam_bound_pmax_T(MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/common.c
+===================================================================
+--- freesteam-2.1.orig/common.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/common.c	2013-06-27 08:49:59.000000000 +0200
+@@ -20,8 +20,8 @@
+ #include "common.h"
+ 
+ /* ipow:  public domain by Mark Stephen with suggestions by Keiichi Nakasato */
+-double ipow(double x, int n){
+-	double t = 1.0;
++MyDouble ipow(MyDouble x, int n){
++	MyDouble t = 1.0;
+ 
+ 	if(!n)return 1.0;    /* At the top. x^0 = 1 */
+ 
+Index: freesteam-2.1/common.h
+===================================================================
+--- freesteam-2.1.orig/common.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/common.h	2013-06-27 08:57:16.000000000 +0200
+@@ -21,6 +21,15 @@
+ 
+ #include "config.h"
+ 
++#if defined(__cplusplus) && defined(HAVE_CADNA_H)
++#include <cadna.h>
++#define MyDouble double_st
++#define MyFloat float_st
++#else
++#define MyDouble double
++#define MyFloat float
++#endif
++
+ #define FREESTEAM_CHAR int
+ 
+ /*
+@@ -97,7 +106,7 @@
+ 
+ /* Basic math routines, if necesary... */
+ 
+-FREESTEAM_DLL double freesteam_ipow(double x, int n);
++FREESTEAM_DLL MyDouble freesteam_ipow(MyDouble x, int n);
+ 
+ #ifdef FREESTEAM_BUILDING_LIB
+ /* our local ipow implementation */
+Index: freesteam-2.1/compat.h
+===================================================================
+--- freesteam-2.1.orig/compat.h	2013-06-27 08:48:19.000000000 +0200
++++ freesteam-2.1/compat.h	2013-06-27 08:50:14.000000000 +0200
+@@ -42,78 +42,78 @@
+ 	return t*t;
+ };
+ 
+-typedef double Num;
++typedef MyDouble Num;
+ 
+ /* UNITS OF MEASUREMENT ALL REDUCED TO DOUBLES */
+ 
+ //--------------------------------
+ // BASE MEASURES
+ 
+-typedef double Mass;
+-typedef double Length;
+-typedef double Time;
+-typedef double Temperature;
+-typedef double Current;
++typedef MyDouble Mass;
++typedef MyDouble Length;
++typedef MyDouble Time;
++typedef MyDouble Temperature;
++typedef MyDouble Current;
+ 
+ //--------------------------------
+ // DERIVED MEASURES
+ 
+-typedef double Area;
+-typedef double Volume;
++typedef MyDouble Area;
++typedef MyDouble Volume;
+ 
+-typedef double Density;
+-typedef double SpecificVolume;
++typedef MyDouble Density;
++typedef MyDouble SpecificVolume;
+ 
+-typedef double DensityPerTime;
++typedef MyDouble DensityPerTime;
+ 
+-typedef double Frequency;
+-
+-typedef double Force;
+-typedef double Pressure;
+-typedef double Velocity;
+-typedef double Acceleration;
+-typedef double Torque;
+-typedef double Energy;
+-typedef double Power;
+-typedef double SpecificEnergy;
+-
+-typedef double DynamicViscosity;
+-typedef double KinematicViscosity;
+-typedef double PowerPerLength;
+-typedef double PressurePerLength;
+-typedef double ForcePerLength;
+-typedef double PowerPerMass;
+-
+-typedef double DensitySpecificEnergyPerTime;
+-
+-typedef double VolFlowRate;
+-typedef double MassFlowRate;
+-typedef double MassFlowRatePerLength;
+-typedef double MassFlowRatePerTime;
++typedef MyDouble Frequency;
++
++typedef MyDouble Force;
++typedef MyDouble Pressure;
++typedef MyDouble Velocity;
++typedef MyDouble Acceleration;
++typedef MyDouble Torque;
++typedef MyDouble Energy;
++typedef MyDouble Power;
++typedef MyDouble SpecificEnergy;
++
++typedef MyDouble DynamicViscosity;
++typedef MyDouble KinematicViscosity;
++typedef MyDouble PowerPerLength;
++typedef MyDouble PressurePerLength;
++typedef MyDouble ForcePerLength;
++typedef MyDouble PowerPerMass;
++
++typedef MyDouble DensitySpecificEnergyPerTime;
++
++typedef MyDouble VolFlowRate;
++typedef MyDouble MassFlowRate;
++typedef MyDouble MassFlowRatePerLength;
++typedef MyDouble MassFlowRatePerTime;
+ 
+-typedef double HeatFlux;
+-typedef double MassFlux;
++typedef MyDouble HeatFlux;
++typedef MyDouble MassFlux;
+ 
+ // Thermodynamics
+ 
+-typedef double Entropy;
+-typedef double SpecificEntropy;
+-typedef double ThermalConductivity;
+-typedef double HeatTransferCoefficient;
+-typedef double ThermalResistance;
++typedef MyDouble Entropy;
++typedef MyDouble SpecificEntropy;
++typedef MyDouble ThermalConductivity;
++typedef MyDouble HeatTransferCoefficient;
++typedef MyDouble ThermalResistance;
+ 
+-typedef double HeatCapacityPerLength;
+-typedef double PowerPerTemperature;
++typedef MyDouble HeatCapacityPerLength;
++typedef MyDouble PowerPerTemperature;
+ 
+-typedef double ThermalExpansionCoefficient;
++typedef MyDouble ThermalExpansionCoefficient;
+ 
+ // Electrical
+ 
+-typedef double Charge;
+-typedef double ElecPotential;
+-typedef double Capacitance;
+-typedef double Resistance;
+-typedef double Conductance;
++typedef MyDouble Charge;
++typedef MyDouble ElecPotential;
++typedef MyDouble Capacitance;
++typedef MyDouble Resistance;
++typedef MyDouble Conductance;
+ 
+ 
+ //----------------------------------------------
+@@ -149,16 +149,16 @@
+ //------------------------------------
+ // SI MULTIPLIERS
+ 
+-const double Tera = 1e12;
+-const double Giga = 1e9;
+-const double Mega = 1e6;
+-const double kilo = 1e3;
+-const double hecta = 1e2;
+-const double Deca = 10;
+-const double deci = 0.1;
+-const double centi = 1e-2;
+-const double milli = 1e-3;
+-const double micro = 1e-6;
++const MyDouble Tera = 1e12;
++const MyDouble Giga = 1e9;
++const MyDouble Mega = 1e6;
++const MyDouble kilo = 1e3;
++const MyDouble hecta = 1e2;
++const MyDouble Deca = 10;
++const MyDouble deci = 0.1;
++const MyDouble centi = 1e-2;
++const MyDouble milli = 1e-3;
++const MyDouble micro = 1e-6;
+ 
+ //------------------------------------
+ // COMMON MEASURES (SI)
+@@ -197,7 +197,7 @@
+ 
+ const HeatFlux W_m2 = Watt / metre2;
+ 
+-const double Percent = 1.0 / 100;
++const MyDouble Percent = 1.0 / 100;
+ 
+ //------------------------------------
+ // THERMODYNAMIC MEASURES
+@@ -251,45 +251,45 @@
+ 
+ /**
+ 	Convert a temperature (in Kelvin) to Celsius.
+-	@return the temperature, as a plain 'double' type
++	@return the temperature, as a plain 'MyDouble' type
+ */
+-inline double
++inline MyDouble
+ tocelsius(const Temperature& T){
+-	double d = *reinterpret_cast<const double*>(&T);
++	MyDouble d = *reinterpret_cast<const MyDouble*>(&T);
+ 	return d - 273.15;
+ }
+ 
+ /**
+ 	Convert a Celsius temperature to Kelvin
+-	@param T_C double value for the temperature in degrees
++	@param T_C MyDouble value for the temperature in degrees
+ 	@return Temperature object (Kelvin)
+ */
+ inline Temperature
+-fromcelsius(const double &T_C){
++fromcelsius(const MyDouble &T_C){
+ 	return (T_C * Kelvin) + ZeroCelsius;
+ }
+ 
+ /**
+ 	Convert from Fahrenheit temperature to Temperature object (Kelvin)
+ */
+-inline double
++inline MyDouble
+ tofahrenheit(const Temperature &T){
+ 	return (T - ZeroFahrenheit) / Rankin;
+ }
+ 
+ /// Convert Temperature object to Fahrenheit
+ /**
+-	@return temperature in Fahrenheit (as type 'double')
++	@return temperature in Fahrenheit (as type 'MyDouble')
+ */
+ inline Temperature
+-fromfahrenheit(const double &T_F){
++fromfahrenheit(const MyDouble &T_F){
+ 	return (T_F * Rankin) + ZeroFahrenheit;
+ }
+ 
+ // USEFUL CONSTANTS
+ 
+ /// Stefan-Boltzmann Constant (radiation)
+-const double SIGMA_C = (5.670e-8) * W_m2 /sq(sq(Kelvin));
++const MyDouble SIGMA_C = (5.670e-8) * W_m2 /sq(sq(Kelvin));
+ 
+ /* STEAM-SPECIFIC CONSTANTS */
+ 
+@@ -368,9 +368,9 @@
+ 
+ typedef enum{SOLVE_IENERGY, SOLVE_ENTHALPY, SOLVE_ENTROPY, SOLVE_CP, SOLVE_CV, SOLVE_TEMPERATURE, SOLVE_PRESSURE} SolveParam;
+ 
+-typedef SteamState SteamSolveFunction(double, double);
+-typedef int SteamRegionFunction(double, double);
+-typedef int SteamBoundsFunction(double, double, int);
++typedef SteamState SteamSolveFunction(MyDouble, MyDouble);
++typedef int SteamRegionFunction(MyDouble, MyDouble);
++typedef int SteamBoundsFunction(MyDouble, MyDouble, int);
+ 
+ class SteamCalculator{
+ 	private:
+@@ -452,18 +452,18 @@
+ 			return S.region;
+ 		}
+ 
+-		inline double temp() const{return freesteam_T(S);}
+-		inline double pres() const{return freesteam_p(S);}
+-		inline double dens() const{return 1./freesteam_v(S);}
+-		inline double specvol() const{return freesteam_v(S);}
+-		inline double specienergy() const{return freesteam_u(S);}
+-		inline double specentropy() const{return freesteam_s(S);}
+-		inline double specenthalpy() const{return freesteam_h(S);}
+-		inline double speccp() const{return freesteam_cp(S);}
+-		inline double speccv() const{return freesteam_cv(S);}
+-		inline double quality() const{return freesteam_x(S);}
+-		inline double dynvisc() const{return freesteam_mu(S);}
+-		inline double conductivity() const{return freesteam_k(S);}
++		inline MyDouble temp() const{return freesteam_T(S);}
++		inline MyDouble pres() const{return freesteam_p(S);}
++		inline MyDouble dens() const{return 1./freesteam_v(S);}
++		inline MyDouble specvol() const{return freesteam_v(S);}
++		inline MyDouble specienergy() const{return freesteam_u(S);}
++		inline MyDouble specentropy() const{return freesteam_s(S);}
++		inline MyDouble specenthalpy() const{return freesteam_h(S);}
++		inline MyDouble speccp() const{return freesteam_cp(S);}
++		inline MyDouble speccv() const{return freesteam_cv(S);}
++		inline MyDouble quality() const{return freesteam_x(S);}
++		inline MyDouble dynvisc() const{return freesteam_mu(S);}
++		inline MyDouble conductivity() const{return freesteam_k(S);}
+ };
+ 
+ template<SolveParam FirstProp, SolveParam SecondProp>
+@@ -478,11 +478,11 @@
+ 		Solver2();
+ 		~Solver2(){}
+ 
+-		inline int whichRegion(const double &fp, const double &sp){return (*regionfunc)(fp,sp);}
+-		inline SteamCalculator solve(const double &fp, const double &sp){return SteamCalculator((*solvefunc)(fp,sp));}
++		inline int whichRegion(const MyDouble &fp, const MyDouble &sp){return (*regionfunc)(fp,sp);}
++		inline SteamCalculator solve(const MyDouble &fp, const MyDouble &sp){return SteamCalculator((*solvefunc)(fp,sp));}
+ 
+ 		/* ignore any provided guesses, we can't use those currently in freesteam 2.0 */
+-		inline SteamState solve(const double &fp, const double &sp, const SteamCalculator firstguess){return (*solvefunc)(fp,sp);}
++		inline SteamState solve(const MyDouble &fp, const MyDouble &sp, const SteamCalculator firstguess){return (*solvefunc)(fp,sp);}
+ };
+ 
+ template<>
+Index: freesteam-2.1/derivs.h
+===================================================================
+--- freesteam-2.1.orig/derivs.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/derivs.h	2013-06-27 08:50:00.000000000 +0200
+@@ -39,21 +39,21 @@
+ 	function for use in Python.
+ 	http://stackoverflow.com/questions/433895/why-are-c-character-literals-ints-instead-of-chars
+  */
+-FREESTEAM_DLL double freesteam_deriv(SteamState S, char xyz[3]);
++FREESTEAM_DLL MyDouble freesteam_deriv(SteamState S, char xyz[3]);
+ 
+-FREESTEAM_DLL double freesteam_drhofdT_T(double T);
+-FREESTEAM_DLL double freesteam_drhogdT_T(double T);
++FREESTEAM_DLL MyDouble freesteam_drhofdT_T(MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_drhogdT_T(MyDouble T);
+ 
+ /* region-by-region derivative functions */
+-typedef double PartialDerivFn(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region3_dAdvT(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region3_dAdTv(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region1_dAdTp(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region1_dAdpT(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region2_dAdTp(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region2_dAdpT(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region4_dAdTx(FREESTEAM_CHAR,SteamState);
+-FREESTEAM_DLL double freesteam_region4_dAdxT(FREESTEAM_CHAR,SteamState);
++typedef MyDouble PartialDerivFn(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region3_dAdvT(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region3_dAdTv(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region1_dAdTp(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region1_dAdpT(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region2_dAdTp(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region2_dAdpT(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region4_dAdTx(FREESTEAM_CHAR,SteamState);
++FREESTEAM_DLL MyDouble freesteam_region4_dAdxT(FREESTEAM_CHAR,SteamState);
+ 
+ 
+ 
+Index: freesteam-2.1/derivs.c
+===================================================================
+--- freesteam-2.1.orig/derivs.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/derivs.c	2013-06-27 08:50:00.000000000 +0200
+@@ -74,7 +74,7 @@
+ 
+ 	@return the numerical value of the derivative (∂z/∂x)y.
+ */
+-double freesteam_deriv(SteamState S, char xyz[3]){
++MyDouble freesteam_deriv(SteamState S, char xyz[3]){
+ 	char x = xyz[0];
+ 	char y = xyz[1];
+ 	char z = xyz[2];
+@@ -94,13 +94,13 @@
+ 			);
+ 			exit(1);
+ 	}
+-	double ZAB = (*AB)(z,S);
+-	double ZBA = (*BA)(z,S);
+-	double XAB = (*AB)(x,S);
+-	double XBA = (*BA)(x,S);
+-	double YAB = (*AB)(y,S);
+-	double YBA = (*BA)(y,S);
+-	double deriv = ((ZAB*YBA-ZBA*YAB)/(XAB*YBA-XBA*YAB));
++	MyDouble ZAB = (*AB)(z,S);
++	MyDouble ZBA = (*BA)(z,S);
++	MyDouble XAB = (*AB)(x,S);
++	MyDouble XBA = (*BA)(x,S);
++	MyDouble YAB = (*AB)(y,S);
++	MyDouble YBA = (*BA)(y,S);
++	MyDouble deriv = ((ZAB*YBA-ZBA*YAB)/(XAB*YBA-XBA*YAB));
+ 	//fprintf(stderr,"Calculated (∂%c/∂%c)%c = %g\n",z,x,y,deriv);
+ 	return deriv;
+ }
+@@ -126,8 +126,8 @@
+ /**
+ 	TODO convert char to enum for better compiler checking capability
+ */
+-double freesteam_region3_dAdvT(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region3_dAdvT(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = -p*betap; break;
+ 		case 'T': res = 0; break;
+@@ -146,8 +146,8 @@
+ 	return res;
+ }
+ 
+-double freesteam_region3_dAdTv(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region3_dAdTv(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = p*alphap; break;
+ 		case 'T': res = 1; break;
+@@ -190,8 +190,8 @@
+ /**
+ 	TODO convert char to enum for better compiler checking capability
+ */
+-double freesteam_region1_dAdTp(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region1_dAdTp(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = 0; break;
+ 		case 'T': res = 1; break;
+@@ -212,8 +212,8 @@
+ 	return res;
+ }
+ 
+-double freesteam_region1_dAdpT(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region1_dAdpT(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = 1; break;
+ 		case 'T': res = 0; break;
+@@ -258,8 +258,8 @@
+ /**
+ 	TODO convert char to enum for better compiler checking capability
+ */
+-double freesteam_region2_dAdTp(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region2_dAdTp(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = 0; break;
+ 		case 'T': res = 1; break;
+@@ -283,8 +283,8 @@
+ 	return res;
+ }
+ 
+-double freesteam_region2_dAdpT(FREESTEAM_CHAR x, SteamState S){
+-	double res;
++MyDouble freesteam_region2_dAdpT(FREESTEAM_CHAR x, SteamState S){
++	MyDouble res;
+ 	switch(x){
+ 		case 'p': res = 1; break;
+ 		case 'T': res = 0; break;
+@@ -327,8 +327,8 @@
+ 	⎰ ∂z ⎱   =  ⎰∂z_f⎱ (1 - x) + ⎰∂z_f⎱ x
+ 	⎱ ∂T ⎰x     ⎱ ∂T ⎰           ⎱ ∂T ⎰
+ */
+-double freesteam_region4_dAdTx(FREESTEAM_CHAR z, SteamState S){
+-	double res;
++MyDouble freesteam_region4_dAdTx(FREESTEAM_CHAR z, SteamState S){
++	MyDouble res;
+ #define T S.R4.T
+ 	switch(z){
+ 		case 'p': res = freesteam_region4_dpsatdT_T(T); return res;
+@@ -339,25 +339,25 @@
+ 	//fprintf(stderr,"%s: T = %g\n",__func__,T);
+ 	assert(!isnan(T));
+ 
+-	double dzfdT, dzgdT;
++	MyDouble dzfdT, dzgdT;
+ 	if(T < REGION1_TMAX){
+ 		//fprintf(stderr,"%s: below REGION1_TMAX\n",__func__);
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		SteamState Sf = freesteam_region1_set_pT(psat,T);
+ 		SteamState Sg = freesteam_region2_set_pT(psat,T);
+-		double dpsatdT = freesteam_region4_dpsatdT_T(T);
++		MyDouble dpsatdT = freesteam_region4_dpsatdT_T(T);
+ 		dzfdT = PT1(z,Sf)*dpsatdT + TP1(z,Sf);
+ 		dzgdT = PT2(z,Sg)*dpsatdT + TP2(z,Sg);
+ 	}else{
+-		double rhof = freesteam_region4_rhof_T(T);
+-		double rhog = freesteam_region4_rhog_T(T);
++		MyDouble rhof = freesteam_region4_rhof_T(T);
++		MyDouble rhog = freesteam_region4_rhog_T(T);
+ 		assert(rhof!=0);
+ 		assert(rhog!=0);
+ 		SteamState Sf = freesteam_region3_set_rhoT(rhof,T);
+ 		SteamState Sg = freesteam_region3_set_rhoT(rhog,T);
+-		double dvfdT = -1./SQ(rhof) * freesteam_drhofdT_T(T);
++		MyDouble dvfdT = -1./SQ(rhof) * freesteam_drhofdT_T(T);
+ 		assert(!isnan(dvfdT));
+-		double dvgdT = -1./SQ(rhog) * freesteam_drhogdT_T(T);
++		MyDouble dvgdT = -1./SQ(rhog) * freesteam_drhogdT_T(T);
+ 		assert(!isnan(dvgdT));
+ 		dzfdT = VT3(z,Sf)*dvfdT + TV3(z,Sf);
+ 		dzgdT = VT3(z,Sg)*dvgdT + TV3(z,Sg);
+@@ -389,7 +389,7 @@
+ 	⎱ ∂x ⎰T   ⎱ ∂x ⎰T
+ 
+ */	
+-double freesteam_region4_dAdxT(FREESTEAM_CHAR z, SteamState S){
++MyDouble freesteam_region4_dAdxT(FREESTEAM_CHAR z, SteamState S){
+ 	switch(z){
+ 		case 'p': return 0;
+ 		case 'T': return 0;
+@@ -397,8 +397,8 @@
+ 	}
+ #define T S.R4.T
+ #define x S.R4.x
+-	double p = freesteam_region4_psat_T(T);
+-	double zf, zg;
++	MyDouble p = freesteam_region4_psat_T(T);
++	MyDouble zf, zg;
+ 	switch(z){
+ 		case 'v': ZFG(v,p,T); break;
+ 		case 'u': ZFG(u,p,T); break;
+@@ -421,35 +421,35 @@
+   DERIVATIVES OF rhof and rhog with temperature
+ */
+ 
+-double freesteam_drhofdT_T(double T){
+-	double dpsatdT = freesteam_region4_dpsatdT_T(T);
++MyDouble freesteam_drhofdT_T(MyDouble T){
++	MyDouble dpsatdT = freesteam_region4_dpsatdT_T(T);
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		SteamState Sf = freesteam_region1_set_pT(psat,T);
+-		double vf = freesteam_v(Sf);
++		MyDouble vf = freesteam_v(Sf);
+ 		return -1./SQ(vf) * (PT1('v',Sf) * dpsatdT + TP1('v',Sf));
+ 	}else{
+ 		/* FIXME: add iterative refinement of value of rhof */
+-		double rhof = freesteam_region4_rhof_T(T);
++		MyDouble rhof = freesteam_region4_rhof_T(T);
+ 		SteamState Sf = freesteam_region3_set_rhoT(rhof,T);
+-		double dpdT = TV3('p',Sf);
+-		double dpdrho = -1./SQ(rhof) * VT3('p',Sf);
++		MyDouble dpdT = TV3('p',Sf);
++		MyDouble dpdrho = -1./SQ(rhof) * VT3('p',Sf);
+ 		return (dpsatdT - dpdT)/dpdrho;
+ 	}
+ }
+ 
+-double freesteam_drhogdT_T(double T){
+-	double dpsatdT = freesteam_region4_dpsatdT_T(T);
+-	double rhog = freesteam_region4_rhog_T(T);
++MyDouble freesteam_drhogdT_T(MyDouble T){
++	MyDouble dpsatdT = freesteam_region4_dpsatdT_T(T);
++	MyDouble rhog = freesteam_region4_rhog_T(T);
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		SteamState Sg = freesteam_region2_set_pT(psat,T);
+-		double vf = freesteam_v(Sg);
++		MyDouble vf = freesteam_v(Sg);
+ 		return -1./SQ(vf) * (PT2('v',Sg) * dpsatdT + TP2('v',Sg));
+ 	}else{
+ 		SteamState Sg = freesteam_region3_set_rhoT(rhog,T);
+-		double dpdT = TV3('p',Sg);
+-		double dpdrho = -1./SQ(rhog) * VT3('p',Sg);
++		MyDouble dpdT = TV3('p',Sg);
++		MyDouble dpdrho = -1./SQ(rhog) * VT3('p',Sg);
+ 		return (dpsatdT - dpdT)/dpdrho;
+ 	}
+ }
+Index: freesteam-2.1/region1.c
+===================================================================
+--- freesteam-2.1.orig/region1.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region1.c	2013-06-27 08:50:00.000000000 +0200
+@@ -20,81 +20,81 @@
+ #define FREESTEAM_BUILDING_LIB
+ #include "region1.h"
+ 
+-static double gam(double pi, double tau);
+-static double gampi(double pi, double tau);
+-static double gampipi(double pi, double tau);
+-static double gamtau(double pi, double tau);
+-static double gamtautau(double pi, double tau);
+-static double gampitau(double pi, double tau);
++static MyDouble gam(MyDouble pi, MyDouble tau);
++static MyDouble gampi(MyDouble pi, MyDouble tau);
++static MyDouble gampipi(MyDouble pi, MyDouble tau);
++static MyDouble gamtau(MyDouble pi, MyDouble tau);
++static MyDouble gamtautau(MyDouble pi, MyDouble tau);
++static MyDouble gampitau(MyDouble pi, MyDouble tau);
+ 
+ #define REGION1_GPT_PSTAR 16.53e6 /* Pa */
+ #define REGION1_GPT_TSTAR 1386. /* K */
+ 
+ #define DEFINE_PITAU(P,T) \
+-	double pi = p / REGION1_GPT_PSTAR; \
+-	double tau = REGION1_GPT_TSTAR / T
++	MyDouble pi = p / REGION1_GPT_PSTAR; \
++	MyDouble tau = REGION1_GPT_TSTAR / T
+ 
+ #define R IAPWS97_R
+ 
+ #include <math.h>
+ 
+-double freesteam_region1_u_pT(double p, double T){
++MyDouble freesteam_region1_u_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return (R * T) * (tau * gamtau(pi,tau) - pi * gampi(pi,tau));
+ }
+ 
+-double freesteam_region1_v_pT(double p, double T){
++MyDouble freesteam_region1_v_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return (R * T / p) * pi * gampi(pi,tau);
+ }
+ 
+-double freesteam_region1_s_pT(double p, double T){
++MyDouble freesteam_region1_s_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return R * (tau * gamtau(pi,tau) - gam(pi,tau));
+ }
+ 
+-double freesteam_region1_h_pT(double p, double T){
++MyDouble freesteam_region1_h_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return R * T * (tau * gamtau(pi,tau));
+ }
+ 
+-double freesteam_region1_cp_pT(double p, double T){
++MyDouble freesteam_region1_cp_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return R * (-SQ(tau) * gamtautau(pi,tau));
+ }
+ 
+-double freesteam_region1_cv_pT(double p, double T){
++MyDouble freesteam_region1_cv_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return R * (-SQ(tau) * gamtautau(pi,tau) + SQ(gampi(pi,tau) -
+ 		tau * gampitau(pi,tau)) / gampipi(pi,tau)
+ 	);
+ }
+ 
+-double freesteam_region1_w_pT(double p, double T){
++MyDouble freesteam_region1_w_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+-	double gp = gampi(pi,tau);
++	MyDouble gp = gampi(pi,tau);
+ 	return sqrt(R * T * SQ(gp) / \
+ 		(SQ(gp - tau*gampitau(pi,tau))/SQ(tau)/gamtautau(pi,tau) - gampipi(pi,tau))
+ 	);
+ }
+ 
+-double freesteam_region1_g_pT(double p, double T){
++MyDouble freesteam_region1_g_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * T * gam(pi,tau);
+ }
+ 
+-double freesteam_region1_a_pT(double p, double T){
++MyDouble freesteam_region1_a_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * T * (gam(pi,tau) - gampi(pi,tau) * pi);
+ }
+ 
+ 
+-double freesteam_region1_alphav_pT(double p, double T){
++MyDouble freesteam_region1_alphav_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return 1./T * (1. - tau*gampitau(pi,tau)/gampi(pi,tau));
+ }
+ 
+-double freesteam_region1_kappaT_pT(double p, double T){
++MyDouble freesteam_region1_kappaT_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(P,T);
+ 	return -1./p * pi*gampipi(pi,tau)/gampi(pi,tau);
+ }
+@@ -104,7 +104,7 @@
+ 
+ typedef struct{
+ 	int I, J;
+-	double n;
++	MyDouble n;
+ } IJNData;
+ 
+ const IJNData REGION1_GPT_DATA[] = {
+@@ -147,46 +147,46 @@
+ const unsigned REGION1_GPT_MAX = sizeof(REGION1_GPT_DATA)/sizeof(IJNData);
+ 
+ #define REGION1_GPT_LOOP \
+-	double sum = 0; \
++	MyDouble sum = 0; \
+ 	const IJNData *d, *e = REGION1_GPT_DATA + REGION1_GPT_MAX; \
+ 	for(d = REGION1_GPT_DATA; d < e; ++d)
+ 
+-double gam(double pi, double tau){
++MyDouble gam(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum += d->n * ipow(7.1 - pi,d->I) * ipow(tau - 1.222,d->J);
+ 	}
+ 	return sum;
+ }
+ 
+-double gampi(double pi, double tau){
++MyDouble gampi(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum +=  -d->n * d->I * ipow(7.1 - pi,d->I -1) * ipow(tau - 1.222,d->J);
+ 	}
+ 	return sum;
+ }
+ 
+-double gampipi(double pi, double tau){
++MyDouble gampipi(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum += d->n * d->I * (d->I - 1) * ipow(7.1 - pi, d->I - 2) * ipow(tau - 1.222, d->J);
+     }
+ 	return sum;
+ }
+ 
+-double gamtau(double pi, double tau){
++MyDouble gamtau(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum += d->n * ipow(7.1 - pi, d->I) * d->J * ipow(tau - 1.222, d->J - 1);
+ 	}
+ 	return sum;
+ }
+ 
+-double gamtautau(double pi, double tau){
++MyDouble gamtautau(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum += d->n * ipow(7.1 - pi, d->I) * d->J * (d->J - 1) * ipow(tau - 1.222, d->J - 2);
+ 	}
+ 	return sum;
+ }
+ 
+-double gampitau(double pi, double tau){
++MyDouble gampitau(MyDouble pi, MyDouble tau){
+ 	REGION1_GPT_LOOP{
+ 		sum += -d->n * d->I * ipow(7.1 - pi, d->I - 1) * d->J * ipow(tau - 1.222, d->J - 1);
+ 	}
+Index: freesteam-2.1/region1.h
+===================================================================
+--- freesteam-2.1.orig/region1.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region1.h	2013-06-27 08:50:15.000000000 +0200
+@@ -22,19 +22,19 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_region1_u_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_v_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_s_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_h_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_cp_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_cv_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_w_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_a_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region1_g_pT(double p, double T);
++FREESTEAM_DLL MyDouble freesteam_region1_u_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_v_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_s_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_h_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_cp_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_cv_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_w_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_a_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region1_g_pT(MyDouble p, MyDouble T);
+ 
+ /* used in calculations of derivatives, see derivs.c */
+-double freesteam_region1_alphav_pT(double p, double T);
+-double freesteam_region1_kappaT_pT(double p, double T);
++MyDouble freesteam_region1_alphav_pT(MyDouble p, MyDouble T);
++MyDouble freesteam_region1_kappaT_pT(MyDouble p, MyDouble T);
+ 
+ #define REGION1_TMAX 623.15 /* K */
+ 
+Index: freesteam-2.1/region2.c
+===================================================================
+--- freesteam-2.1.orig/region2.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region2.c	2013-06-27 08:50:01.000000000 +0200
+@@ -34,16 +34,16 @@
+ #define gamtautau(PI,TAU) (GAM0TAUTAU(PI,TAU) + gamrtautau(PI,TAU))
+ #define gampitau(PI,TAU) (GAM0PITAU(PI,TAU) + gamrpitau(PI,TAU))
+ 
+-static double gamr(double pi, double tau);
+-static double gamrpi(double pi, double tau);
+-static double gamrpipi(double pi, double tau);
+-static double gamrtau(double pi, double tau);
+-static double gamrtautau(double pi, double tau);
+-static double gamrpitau(double pi, double tau);
+-
+-static double gam0(double pi, double tau);
+-static double gam0tau(double tau);
+-static double gam0tautau(double tau);
++static MyDouble gamr(MyDouble pi, MyDouble tau);
++static MyDouble gamrpi(MyDouble pi, MyDouble tau);
++static MyDouble gamrpipi(MyDouble pi, MyDouble tau);
++static MyDouble gamrtau(MyDouble pi, MyDouble tau);
++static MyDouble gamrtautau(MyDouble pi, MyDouble tau);
++static MyDouble gamrpitau(MyDouble pi, MyDouble tau);
++
++static MyDouble gam0(MyDouble pi, MyDouble tau);
++static MyDouble gam0tau(MyDouble tau);
++static MyDouble gam0tautau(MyDouble tau);
+ 
+ #include <math.h>
+ #include "common.h"
+@@ -54,72 +54,72 @@
+ #define REGION2_GPT_TSTAR 540. /* K */
+ 
+ #define DEFINE_PITAU(P,T) \
+-	double pi = p / REGION2_GPT_PSTAR; \
+-	double tau = REGION2_GPT_TSTAR / T
++	MyDouble pi = p / REGION2_GPT_PSTAR; \
++	MyDouble tau = REGION2_GPT_TSTAR / T
+ 
+ 
+-double freesteam_region2_v_pT(double p, double T){
++MyDouble freesteam_region2_v_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return (R * T / p) * pi * gampi(pi,tau);
+ }
+ 
+-double freesteam_region2_u_pT(double p, double T){
++MyDouble freesteam_region2_u_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return (R * T) * (tau * gamtau(pi,tau) - pi * gampi(pi,tau));
+ }
+ 
+-double freesteam_region2_s_pT(double p, double T){
++MyDouble freesteam_region2_s_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * (tau * gamtau(pi,tau) - gam(pi,tau));
+ }
+ 
+-double freesteam_region2_h_pT(double p, double T){
++MyDouble freesteam_region2_h_pT(MyDouble p, MyDouble T){
+ 	//fprintf(stderr,"%s: p = %f, T = %f\n",__func__,p,T);
+ 	DEFINE_PITAU(p,T);
+ 	return R * T * (tau * gamtau(pi,tau));
+ }
+ 
+-double freesteam_region2_cp_pT(double p, double T){
++MyDouble freesteam_region2_cp_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * (-SQ(tau) * gamtautau(pi,tau));
+ }
+ 
+-double freesteam_region2_cv_pT(double p, double T){
++MyDouble freesteam_region2_cv_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * (-SQ(tau) * gamtautau(pi,tau) + SQ(gampi(pi,tau) -
+ 		tau * gampitau(pi,tau)) / gampipi(pi,tau)
+ 	);
+ }
+ 
+-double freesteam_region2_w_pT(double p, double T){
++MyDouble freesteam_region2_w_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+-	double gp = gamrpi(pi,tau);
++	MyDouble gp = gamrpi(pi,tau);
+ 	return sqrt(R * T * (1. + 2.*pi*gp+SQ(pi*gp))/
+ 		((1. - SQ(pi)*gamrpipi(pi,tau))	+ SQ(1. + pi*gp - tau*pi*gamrpitau(pi,tau))/SQ(tau)/gamtautau(pi,tau))
+ 	);
+ }
+ 
+-double freesteam_region2_g_pT(double p, double T){
++MyDouble freesteam_region2_g_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * T * gam(pi,tau);
+ }	
+ 
+-double freesteam_region2_a_pT(double p, double T){
++MyDouble freesteam_region2_a_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+ 	return R * T * (gam(pi,tau) - gampi(pi,tau) * pi);
+ }
+ 
+-double freesteam_region2_alphav_pT(double p, double T){
++MyDouble freesteam_region2_alphav_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+-	double pigamrpi = pi*gamrpi(pi,tau);
+-	double alphav = 1./T * (1. + pigamrpi - tau*pi*gamrpitau(pi,tau))/(1. + pigamrpi);
++	MyDouble pigamrpi = pi*gamrpi(pi,tau);
++	MyDouble alphav = 1./T * (1. + pigamrpi - tau*pi*gamrpitau(pi,tau))/(1. + pigamrpi);
+ 	//fprintf(stderr,"α_v = %g\n",alphav);
+ 	return alphav;
+ }
+ 
+-double freesteam_region2_kappaT_pT(double p, double T){
++MyDouble freesteam_region2_kappaT_pT(MyDouble p, MyDouble T){
+ 	DEFINE_PITAU(p,T);
+-	double kappaT = 1./p * (1.-SQ(pi)*gamrpipi(pi,tau)) / (1.+pi*gamrpi(pi,tau));
++	MyDouble kappaT = 1./p * (1.-SQ(pi)*gamrpipi(pi,tau)) / (1.+pi*gamrpi(pi,tau));
+ 	//fprintf(stderr,"κ_T = %g\n",kappaT);
+ 	return kappaT;
+ }
+@@ -130,7 +130,7 @@
+ 
+ typedef struct{
+ 	int J;
+-	double n;
++	MyDouble n;
+ } JNData;
+ 
+ const JNData REGION2_GPT_IDEAL_DATA[] = {
+@@ -148,25 +148,25 @@
+ const unsigned REGION2_GPT_IDEAL_MAX = sizeof(REGION2_GPT_IDEAL_DATA)/sizeof(JNData);
+ 
+ #define REGION2_GPT_IDEAL_LOOP \
+-	double sum = 0; \
++	MyDouble sum = 0; \
+ 	const JNData *d, *e = REGION2_GPT_IDEAL_DATA + REGION2_GPT_IDEAL_MAX; \
+ 	for(d = REGION2_GPT_IDEAL_DATA; d < e; ++d)
+ 
+-double gam0(double pi, double tau){
++MyDouble gam0(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_IDEAL_LOOP{
+ 		sum += d->n * ipow(tau, d->J);
+ 	}
+ 	return log(pi) + sum;
+ }
+ 
+-double gam0tau(double tau){
++MyDouble gam0tau(MyDouble tau){
+ 	REGION2_GPT_IDEAL_LOOP{
+ 		sum += d->n * d->J * ipow(tau, d->J - 1);
+ 	}
+ 	return sum;
+ }
+ 
+-double gam0tautau(double tau){
++MyDouble gam0tautau(MyDouble tau){
+ 	REGION2_GPT_IDEAL_LOOP{
+ 		sum += d->n * d->J * (d->J - 1) * ipow(tau, d->J - 2);
+ 	}
+@@ -179,7 +179,7 @@
+ 
+ typedef struct{
+ 	int I, J;
+-	double n;
++	MyDouble n;
+ } IJNData;
+ 
+ const IJNData REGION2_GPT_RESID_DATA[] = {
+@@ -231,46 +231,46 @@
+ const unsigned REGION2_GPT_RESID_MAX = sizeof(REGION2_GPT_RESID_DATA)/sizeof(IJNData);
+ 
+ #define REGION2_GPT_RESID_LOOP \
+-	double sum = 0; \
++	MyDouble sum = 0; \
+ 	const IJNData *d, *e = REGION2_GPT_RESID_DATA + REGION2_GPT_RESID_MAX; \
+ 	for(d = REGION2_GPT_RESID_DATA; d < e; ++d)
+ 
+-double gamr(double pi, double tau){
++MyDouble gamr(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum += d->n * ipow(pi,d->I) * ipow(tau - 0.5,d->J);
+ 	}
+ 	return sum;
+ }
+ 
+-double gamrpi(double pi, double tau){
++MyDouble gamrpi(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum +=  d->n * d->I * ipow(pi,d->I -1) * ipow(tau - 0.5,d->J);
+ 	}
+ 	return sum;
+ }
+ 
+-double gamrpipi(double pi, double tau){
++MyDouble gamrpipi(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum += d->n * d->I * (d->I - 1) * ipow(pi, d->I - 2) * ipow(tau - 0.5, d->J);
+     }
+ 	return sum;
+ }
+ 
+-double gamrtau(double pi, double tau){
++MyDouble gamrtau(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum += d->n * ipow(pi, d->I) * d->J * ipow(tau - 0.5, d->J - 1);
+ 	}
+ 	return sum;
+ }
+ 
+-double gamrtautau(double pi, double tau){
++MyDouble gamrtautau(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum += d->n * ipow(pi, d->I) * d->J * (d->J - 1) * ipow(tau - 0.5, d->J - 2);
+ 	}
+ 	return sum;
+ }
+ 
+-double gamrpitau(double pi, double tau){
++MyDouble gamrpitau(MyDouble pi, MyDouble tau){
+ 	REGION2_GPT_RESID_LOOP{
+ 		sum += d->n * d->I * ipow(pi, d->I - 1) * d->J * ipow(tau - 0.5, d->J - 1);
+ 	}
+Index: freesteam-2.1/region2.h
+===================================================================
+--- freesteam-2.1.orig/region2.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region2.h	2013-06-27 08:50:16.000000000 +0200
+@@ -24,19 +24,19 @@
+ 
+ #define REGION2_TMAX 1073.15
+ 
+-FREESTEAM_DLL double freesteam_region2_v_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_u_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_s_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_h_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_cp_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_cv_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_w_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_a_pT(double p, double T);
+-FREESTEAM_DLL double freesteam_region2_g_pT(double p, double T);
++FREESTEAM_DLL MyDouble freesteam_region2_v_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_u_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_s_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_h_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_cp_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_cv_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_w_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_a_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region2_g_pT(MyDouble p, MyDouble T);
+ 
+ /* used in calculations of derivatives, see derivs.c */
+-double freesteam_region2_alphav_pT(double p, double T);
+-double freesteam_region2_kappaT_pT(double p, double T);
++MyDouble freesteam_region2_alphav_pT(MyDouble p, MyDouble T);
++MyDouble freesteam_region2_kappaT_pT(MyDouble p, MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/region3.c
+===================================================================
+--- freesteam-2.1.orig/region3.c	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/region3.c	2013-06-27 08:50:01.000000000 +0200
+@@ -20,45 +20,45 @@
+ #define FREESTEAM_BUILDING_LIB
+ #include "region3.h"
+ 
+-const double REGION3_ARHOT_TSTAR = 647.096 /* K */;
+-const double REGION3_ARHOT_RHOSTAR = 322. /* K */;
++const MyDouble REGION3_ARHOT_TSTAR = 647.096 /* K */;
++const MyDouble REGION3_ARHOT_RHOSTAR = 322. /* K */;
+ 
+ #define DEFINE_DELTAU(RHO,T) \
+-	double del = rho / REGION3_ARHOT_RHOSTAR; \
+-	double tau = REGION3_ARHOT_TSTAR / T
++	MyDouble del = rho / REGION3_ARHOT_RHOSTAR; \
++	MyDouble tau = REGION3_ARHOT_TSTAR / T
+ 
+ #define R 461.526
+ 
+-static double phi(double del, double tau);
+-static double phidel(double del, double tau);
+-static double phideldel(double del, double tau);
+-static double phitau(double del, double tau);
+-static double phitautau(double del, double tau);
+-static double phideltau(double del, double tau);
++static MyDouble phi(MyDouble del, MyDouble tau);
++static MyDouble phidel(MyDouble del, MyDouble tau);
++static MyDouble phideldel(MyDouble del, MyDouble tau);
++static MyDouble phitau(MyDouble del, MyDouble tau);
++static MyDouble phitautau(MyDouble del, MyDouble tau);
++static MyDouble phideltau(MyDouble del, MyDouble tau);
+ 
+ #include <math.h>
+ 
+-double freesteam_region3_p_rhoT(double rho, double T){
++MyDouble freesteam_region3_p_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return rho * R * T * del * phidel(del,tau);
+ }
+ 
+-double freesteam_region3_u_rhoT(double rho, double T){
++MyDouble freesteam_region3_u_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return R * T * tau * phitau(del,tau);
+ }
+ 
+-double freesteam_region3_s_rhoT(double rho, double T){
++MyDouble freesteam_region3_s_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return R * (tau * phitau(del,tau) - phi(del,tau));
+ }
+ 
+-double freesteam_region3_h_rhoT(double rho, double T){
++MyDouble freesteam_region3_h_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return R * T * (tau * phitau(del,tau) + del * phidel(del,tau));
+ }
+ 
+-double freesteam_region3_cp_rhoT(double rho, double T){
++MyDouble freesteam_region3_cp_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return R * (
+ 		-SQ(tau) * phitautau(del,tau)
+@@ -69,12 +69,12 @@
+ 	);
+ }
+ 
+-double freesteam_region3_cv_rhoT(double rho, double T){
++MyDouble freesteam_region3_cv_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return R * (-SQ(tau) * phitautau(del,tau));
+ }
+ 
+-double freesteam_region3_w_rhoT(double rho, double T){
++MyDouble freesteam_region3_w_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return sqrt(R * T * (
+ 		2 * del * phidel(del,tau) + SQ(del) * phideldel(del,tau)
+@@ -85,12 +85,12 @@
+ 	));
+ }
+ 
+-double freesteam_region3_alphap_rhoT(double rho, double T){
++MyDouble freesteam_region3_alphap_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return 1./T * (1. - tau*phideltau(del,tau)/phidel(del,tau));
+ }
+ 
+-double freesteam_region3_betap_rhoT(double rho, double T){
++MyDouble freesteam_region3_betap_rhoT(MyDouble rho, MyDouble T){
+ 	DEFINE_DELTAU(rho,T);
+ 	return rho*(2. + del * phideldel(del,tau)/phidel(del,tau));
+ }
+@@ -99,10 +99,10 @@
+ 
+ typedef struct{
+ 	int I, J;
+-	double n;
++	MyDouble n;
+ } IJNData;
+ 
+-const double REGION3_N1 = 0.10658070028513E+01;
++const MyDouble REGION3_N1 = 0.10658070028513E+01;
+ 
+ const IJNData REGION3_ARHOT_DATA[] = {
+ 	{0,	0,	-0.15732845290239E+02}
+@@ -149,46 +149,46 @@
+ const unsigned REGION3_ARHOT_MAX = sizeof(REGION3_ARHOT_DATA)/sizeof(IJNData);
+ 
+ #define REGION3_ARHOT_LOOP \
+-	double sum = 0; \
++	MyDouble sum = 0; \
+ 	const IJNData *d, *e = REGION3_ARHOT_DATA + REGION3_ARHOT_MAX; \
+ 	for(d = REGION3_ARHOT_DATA; d < e; ++d)
+ 
+-double phi(double del, double tau){
++MyDouble phi(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += d->n * ipow(del, d->I) * ipow(tau, d->J);
+ 	}
+ 	return sum + REGION3_N1 * log(del);
+ }
+ 
+-double phidel(double del, double tau){
++MyDouble phidel(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += +d->n * d->I * ipow(del, d->I - 1) * ipow(tau, d->J);
+ 	}
+ 	return sum + REGION3_N1 / del;
+ }
+ 
+-double phideldel(double del, double tau){
++MyDouble phideldel(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += d->n * d->I * (d->I - 1) * ipow(del, d->I - 2) * ipow(tau, d->J);
+ 	}
+ 	return sum - REGION3_N1 / SQ(del) ;
+ }
+ 
+-double phitau(double del, double tau){
++MyDouble phitau(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += d->n * ipow(del, d->I) * d->J * ipow(tau, d->J - 1);
+ 	}
+ 	return sum;
+ }
+ 
+-double phitautau(double del, double tau){
++MyDouble phitautau(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += d->n * ipow(del, d->I) * d->J * (d->J - 1) * ipow(tau, d->J - 2);
+ 	}
+ 	return sum;
+ }
+ 
+-double phideltau(double del, double tau){
++MyDouble phideltau(MyDouble del, MyDouble tau){
+ 	REGION3_ARHOT_LOOP{
+ 		sum += d->n * d->I * ipow(del, d->I - 1) * d->J * ipow(tau, d->J - 1);
+ 	}
+Index: freesteam-2.1/region3.h
+===================================================================
+--- freesteam-2.1.orig/region3.h	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/region3.h	2013-06-27 08:50:16.000000000 +0200
+@@ -22,17 +22,17 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_region3_p_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_u_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_s_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_h_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_cp_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_cv_rhoT(double rho, double T);
+-FREESTEAM_DLL double freesteam_region3_w_rhoT(double rho, double T);
++FREESTEAM_DLL MyDouble freesteam_region3_p_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_u_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_s_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_h_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_cp_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_cv_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region3_w_rhoT(MyDouble rho, MyDouble T);
+ 
+ /* used in calculations of derivatives, see derivs.c */
+-double freesteam_region3_alphap_rhoT(double rho, double T);
+-double freesteam_region3_betap_rhoT(double rho, double T);
++MyDouble freesteam_region3_alphap_rhoT(MyDouble rho, MyDouble T);
++MyDouble freesteam_region3_betap_rhoT(MyDouble rho, MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/region4.c
+===================================================================
+--- freesteam-2.1.orig/region4.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region4.c	2013-06-27 08:50:01.000000000 +0200
+@@ -27,7 +27,7 @@
+ #include <math.h>
+ #include <stdlib.h>
+ 
+-const double REGION4_N[11] = { 0, 0.11670521452767E+04, -0.72421316703206E+06
++const MyDouble REGION4_N[11] = { 0, 0.11670521452767E+04, -0.72421316703206E+06
+ 	, -0.17073846940092E+02, 0.12020824702470E+05, -0.32325550322333E+07
+ 	, 0.14915108613530E+02, -0.48232657361591E+04, 0.40511340542057E+06
+ 	, -0.23855557567849E+00, 0.65017534844798E+03
+@@ -40,17 +40,17 @@
+   REGION 4 SATURATION CURVE psat(T)
+ */
+ 
+-double freesteam_region4_psat_T(double T){
++MyDouble freesteam_region4_psat_T(MyDouble T){
+ 
+ 	//fprintf(stderr,"freesteam_region4_psat_T(T = %f)\n", T );
+ 
+-	double ups = T/REGION4_TSTAR + REGION4_N[9] / (T/REGION4_TSTAR - REGION4_N[10]);
+-	double A = SQ(ups) + REGION4_N[1] * ups + REGION4_N[2];
+-	double B = REGION4_N[3] * SQ(ups) + REGION4_N[4] * ups + REGION4_N[5];
+-	double C = REGION4_N[6] * SQ(ups) + REGION4_N[7] * ups + REGION4_N[8];
++	MyDouble ups = T/REGION4_TSTAR + REGION4_N[9] / (T/REGION4_TSTAR - REGION4_N[10]);
++	MyDouble A = SQ(ups) + REGION4_N[1] * ups + REGION4_N[2];
++	MyDouble B = REGION4_N[3] * SQ(ups) + REGION4_N[4] * ups + REGION4_N[5];
++	MyDouble C = REGION4_N[6] * SQ(ups) + REGION4_N[7] * ups + REGION4_N[8];
+ 
+-	double expr = 2. * C / (- B + sqrt(SQ(B) - 4. * A * C));
+-	double psat = SQ(SQ(expr)) * REGION4_PSTAR;
++	MyDouble expr = 2. * C / (- B + sqrt(SQ(B) - 4. * A * C));
++	MyDouble psat = SQ(SQ(expr)) * REGION4_PSTAR;
+ 
+ 	/* fprintf(stderr,"freesteam_region4_psat_T = %f MPa\n", psat/1e6);*/
+ 	return psat;
+@@ -60,17 +60,17 @@
+   REGION 4 SATURATION CURVE Tsat(p) (BACKWARDS EQUATION)
+ */
+ 
+-double freesteam_region4_Tsat_p(double p){
++MyDouble freesteam_region4_Tsat_p(MyDouble p){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double beta = pow(p/REGION4_PSTAR, 0.25);
+-	double E = SQ(beta) + REGION4_N[3] * beta + REGION4_N[6];
+-	double F = REGION4_N[1] * SQ(beta) + REGION4_N[4] * beta + REGION4_N[7];
+-	double G = REGION4_N[2] * SQ(beta) + REGION4_N[5] * beta + REGION4_N[8];
+-	double D = 2. * G / (-F - sqrt(SQ(F) - 4. * E * G));
++	MyDouble beta = pow(p/REGION4_PSTAR, 0.25);
++	MyDouble E = SQ(beta) + REGION4_N[3] * beta + REGION4_N[6];
++	MyDouble F = REGION4_N[1] * SQ(beta) + REGION4_N[4] * beta + REGION4_N[7];
++	MyDouble G = REGION4_N[2] * SQ(beta) + REGION4_N[5] * beta + REGION4_N[8];
++	MyDouble D = 2. * G / (-F - sqrt(SQ(F) - 4. * E * G));
+ 
+-	double theta = 0.5 * (REGION4_N[10] + D - sqrt(SQ(REGION4_N[10] + D) - 4.0 * (REGION4_N[9] + REGION4_N[10] * D)));
++	MyDouble theta = 0.5 * (REGION4_N[10] + D - sqrt(SQ(REGION4_N[10] + D) - 4.0 * (REGION4_N[9] + REGION4_N[10] * D)));
+ 
+ 	/* FIXME iterative improve this estimate? is it necessary? */
+ 
+@@ -86,31 +86,31 @@
+ /**
+ 	Coefficients for getSatDensWater_T
+ */
+-const double REGION4_B[7]
++const MyDouble REGION4_B[7]
+ 	= { 0, 1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.74694450E+05 };
+ 
+ /**
+ 	Coefficients for getSatDensSteam_T
+ */
+-const double REGION4_C[7]
++const MyDouble REGION4_C[7]
+ 	= { 0, -2.03150240, -2.68302940, -5.38626492, -17.2991605, -44.7586581, -63.9201063 };
+ 
+ 
+-double freesteam_region4_rhof_T(double T){
++MyDouble freesteam_region4_rhof_T(MyDouble T){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double tau = 1 - T / IAPWS97_TCRIT;
++	MyDouble tau = 1 - T / IAPWS97_TCRIT;
+ 
+-	double tau_1_3 = pow(tau,1./3);
++	MyDouble tau_1_3 = pow(tau,1./3);
+ 
+-	double tau_2_3 = SQ(tau_1_3);
+-	double tau_5_3 = tau * tau_2_3;
+-	double tau_16_3 = SQ(tau_5_3) * tau_5_3 * tau_1_3;
+-	double tau_43_3 = SQ(tau_16_3) * SQ(tau_5_3) * tau_1_3;
+-	double tau_110_3 = SQ(tau_43_3) * tau_16_3 * tau_5_3 * tau;
++	MyDouble tau_2_3 = SQ(tau_1_3);
++	MyDouble tau_5_3 = tau * tau_2_3;
++	MyDouble tau_16_3 = SQ(tau_5_3) * tau_5_3 * tau_1_3;
++	MyDouble tau_43_3 = SQ(tau_16_3) * SQ(tau_5_3) * tau_1_3;
++	MyDouble tau_110_3 = SQ(tau_43_3) * tau_16_3 * tau_5_3 * tau;
+ 
+-	double delta = 1
++	MyDouble delta = 1
+ 		+ REGION4_B[1]*tau_1_3
+ 		+ REGION4_B[2]*tau_2_3
+ 		+ REGION4_B[3]*tau_5_3
+@@ -123,23 +123,23 @@
+ 	/* FIXME iteratively improve vf estimate */
+ }
+ 
+-double freesteam_region4_rhog_T(double T){
++MyDouble freesteam_region4_rhog_T(MyDouble T){
+ 
+ 	IAPWS97_APPROXIMATE;
+ 
+-	double tau = 1. - T / IAPWS97_TCRIT;
++	MyDouble tau = 1. - T / IAPWS97_TCRIT;
+ 
+-	double tau_1_6 = pow(tau,1.0/6);
++	MyDouble tau_1_6 = pow(tau,1.0/6);
+ 
+-	double tau_2_6 = SQ(tau_1_6);
+-	double tau_4_6 = SQ(tau_2_6);
+-	double tau_8_6 = SQ(tau_4_6);
+-	double tau_16_6 = SQ(tau_8_6);
+-	double tau_18_6 = tau_16_6 * tau_2_6;
+-	double tau_37_6 = SQ(tau_18_6) * tau_1_6;
+-	double tau_71_6 = tau_37_6 * tau_18_6 * tau_16_6;
++	MyDouble tau_2_6 = SQ(tau_1_6);
++	MyDouble tau_4_6 = SQ(tau_2_6);
++	MyDouble tau_8_6 = SQ(tau_4_6);
++	MyDouble tau_16_6 = SQ(tau_8_6);
++	MyDouble tau_18_6 = tau_16_6 * tau_2_6;
++	MyDouble tau_37_6 = SQ(tau_18_6) * tau_1_6;
++	MyDouble tau_71_6 = tau_37_6 * tau_18_6 * tau_16_6;
+ 
+-	double ln_delta =
++	MyDouble ln_delta =
+ 		  REGION4_C[1]*tau_2_6
+ 		+ REGION4_C[2]*tau_4_6
+ 		+ REGION4_C[3]*tau_8_6
+@@ -157,10 +157,10 @@
+   INTERPOLATIONS FOR PROPERTIES WITHIN REGION 4
+ */
+ 
+-double freesteam_region4_v_Tx(double T, double x){
+-	double vf, vg;
++MyDouble freesteam_region4_v_Tx(MyDouble T, MyDouble x){
++	MyDouble vf, vg;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		vf = freesteam_region1_v_pT(psat,T);
+ 		vg = freesteam_region2_v_pT(psat,T);
+ 	}else{
+@@ -170,14 +170,14 @@
+ 	return vf + x*(vg - vf);
+ }
+ 
+-double freesteam_region4_u_Tx(double T, double x){
+-	double uf, ug;
++MyDouble freesteam_region4_u_Tx(MyDouble T, MyDouble x){
++	MyDouble uf, ug;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		uf = freesteam_region1_u_pT(psat,T);
+ 		ug = freesteam_region2_u_pT(psat,T);
+ 	}else{
+-		double rhof, rhog;
++		MyDouble rhof, rhog;
+ 		rhof = freesteam_region4_rhof_T(T);
+ 		rhog = freesteam_region4_rhog_T(T);
+ 		uf = freesteam_region3_u_rhoT(rhof,T);
+@@ -186,15 +186,15 @@
+ 	return uf + x*(ug - uf);
+ }
+ 
+-double freesteam_region4_h_Tx(double T, double x){
+-	double hf, hg;
++MyDouble freesteam_region4_h_Tx(MyDouble T, MyDouble x){
++	MyDouble hf, hg;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		hf = freesteam_region1_h_pT(psat,T);
+ 		hg = freesteam_region2_h_pT(psat,T);
+ 		//fprintf(stderr,"%s: T = %f K, psat = %f MPa, hf = %f kJ/kg, hg = %f kJ/kg\n",__func__,T,psat/1e6,hf/1e3,hg);
+ 	}else{
+-		double rhof, rhog;
++		MyDouble rhof, rhog;
+ 		rhof = freesteam_region4_rhof_T(T);
+ 		rhog = freesteam_region4_rhog_T(T);
+ 		hf = freesteam_region3_h_rhoT(rhof,T);
+@@ -203,14 +203,14 @@
+ 	return hf + x*(hg - hf);
+ }
+ 
+-double freesteam_region4_s_Tx(double T, double x){
+-	double sf, sg;
++MyDouble freesteam_region4_s_Tx(MyDouble T, MyDouble x){
++	MyDouble sf, sg;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		sf = freesteam_region1_s_pT(psat,T);
+ 		sg = freesteam_region2_s_pT(psat,T);
+ 	}else{
+-		double rhof, rhog;
++		MyDouble rhof, rhog;
+ 		rhof = freesteam_region4_rhof_T(T);
+ 		rhog = freesteam_region4_rhog_T(T);
+ 		sf = freesteam_region3_s_rhoT(rhof,T);
+@@ -219,14 +219,14 @@
+ 	return sf + x*(sg - sf);
+ }
+ 
+-double freesteam_region4_cp_Tx(double T, double x){
+-	double cpf, cpg;
++MyDouble freesteam_region4_cp_Tx(MyDouble T, MyDouble x){
++	MyDouble cpf, cpg;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		cpf = freesteam_region1_cp_pT(psat,T);
+ 		cpg = freesteam_region2_cp_pT(psat,T);
+ 	}else{
+-		double rhof, rhog;
++		MyDouble rhof, rhog;
+ 		rhof = freesteam_region4_rhof_T(T);
+ 		rhog = freesteam_region4_rhog_T(T);
+ 		cpf = freesteam_region3_cp_rhoT(rhof,T);
+@@ -235,14 +235,14 @@
+ 	return cpf + x*(cpg - cpf);
+ }
+ 
+-double freesteam_region4_cv_Tx(double T, double x){
+-	double cvf, cvg;
++MyDouble freesteam_region4_cv_Tx(MyDouble T, MyDouble x){
++	MyDouble cvf, cvg;
+ 	if(T < REGION1_TMAX){
+-		double psat = freesteam_region4_psat_T(T);
++		MyDouble psat = freesteam_region4_psat_T(T);
+ 		cvf = freesteam_region1_cv_pT(psat,T);
+ 		cvg = freesteam_region2_cv_pT(psat,T);
+ 	}else{
+-		double rhof, rhog;
++		MyDouble rhof, rhog;
+ 		rhof = freesteam_region4_rhof_T(T);
+ 		rhog = freesteam_region4_rhog_T(T);
+ 		cvf = freesteam_region3_cv_rhoT(rhof,T);
+@@ -254,18 +254,18 @@
+ /*------------------------------------------------------------------------------
+ */
+ 
+-double freesteam_region4_dpsatdT_T(double T){
++MyDouble freesteam_region4_dpsatdT_T(MyDouble T){
+ 	/* calculated this derivative using implicit differentiation of the
+ 	quadratic expression, then derivatives of beta and script-theta */
+-	double beta = pow(freesteam_region4_psat_T(T)/REGION4_PSTAR, 0.25);
++	MyDouble beta = pow(freesteam_region4_psat_T(T)/REGION4_PSTAR, 0.25);
+ #define N REGION4_N
+-	double theta = T/REGION4_TSTAR + N[9] / (T/REGION4_TSTAR - N[10]);
+-	double XBETA = (2.*beta + N[3])*SQ(theta) + (2.*beta*N[1] + N[4])*theta + 2.*N[2]*beta + N[5];
+-	double XTHETA = (2.*theta + N[1])*SQ(beta) + (2.*N[3]*theta + N[4])*beta + 2.*N[6]*theta + N[7]; 
+-
+-	double dthetadT = (1 - N[9] / (T/REGION4_TSTAR - N[10]))/REGION4_TSTAR;
+-	double dbetadtheta = -XTHETA/XBETA;
+-	double dpdbeta = 4*SQ(beta)*beta*REGION4_PSTAR;
++	MyDouble theta = T/REGION4_TSTAR + N[9] / (T/REGION4_TSTAR - N[10]);
++	MyDouble XBETA = (2.*beta + N[3])*SQ(theta) + (2.*beta*N[1] + N[4])*theta + 2.*N[2]*beta + N[5];
++	MyDouble XTHETA = (2.*theta + N[1])*SQ(beta) + (2.*N[3]*theta + N[4])*beta + 2.*N[6]*theta + N[7]; 
++
++	MyDouble dthetadT = (1 - N[9] / (T/REGION4_TSTAR - N[10]))/REGION4_TSTAR;
++	MyDouble dbetadtheta = -XTHETA/XBETA;
++	MyDouble dpdbeta = 4*SQ(beta)*beta*REGION4_PSTAR;
+ #undef N
+ 
+ 	return dpdbeta * dbetadtheta * dthetadT;
+Index: freesteam-2.1/region4.h
+===================================================================
+--- freesteam-2.1.orig/region4.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/region4.h	2013-06-27 08:50:16.000000000 +0200
+@@ -22,20 +22,20 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_region4_psat_T(double T);
+-FREESTEAM_DLL double freesteam_region4_Tsat_p(double p);
++FREESTEAM_DLL MyDouble freesteam_region4_psat_T(MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region4_Tsat_p(MyDouble p);
+ 
+-FREESTEAM_DLL double freesteam_region4_rhof_T(double T);
+-FREESTEAM_DLL double freesteam_region4_rhog_T(double T);
++FREESTEAM_DLL MyDouble freesteam_region4_rhof_T(MyDouble T);
++FREESTEAM_DLL MyDouble freesteam_region4_rhog_T(MyDouble T);
+ 
+-FREESTEAM_DLL double freesteam_region4_v_Tx(double T, double x);
+-FREESTEAM_DLL double freesteam_region4_u_Tx(double T, double x);
+-FREESTEAM_DLL double freesteam_region4_h_Tx(double T, double x);
+-FREESTEAM_DLL double freesteam_region4_s_Tx(double T, double x);
+-FREESTEAM_DLL double freesteam_region4_cp_Tx(double T, double x);
+-FREESTEAM_DLL double freesteam_region4_cv_Tx(double T, double x);
++FREESTEAM_DLL MyDouble freesteam_region4_v_Tx(MyDouble T, MyDouble x);
++FREESTEAM_DLL MyDouble freesteam_region4_u_Tx(MyDouble T, MyDouble x);
++FREESTEAM_DLL MyDouble freesteam_region4_h_Tx(MyDouble T, MyDouble x);
++FREESTEAM_DLL MyDouble freesteam_region4_s_Tx(MyDouble T, MyDouble x);
++FREESTEAM_DLL MyDouble freesteam_region4_cp_Tx(MyDouble T, MyDouble x);
++FREESTEAM_DLL MyDouble freesteam_region4_cv_Tx(MyDouble T, MyDouble x);
+ 
+-FREESTEAM_DLL double freesteam_region4_dpsatdT_T(double T);
++FREESTEAM_DLL MyDouble freesteam_region4_dpsatdT_T(MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/solver2.c
+===================================================================
+--- freesteam-2.1.orig/solver2.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/solver2.c	2013-06-27 08:50:02.000000000 +0200
+@@ -37,7 +37,7 @@
+   LOOKUP FOR APPROPRIATE PROPERTY EVALUATION FUNCTION
+ */
+ 
+-typedef double PropertyFunction(double, double);
++typedef MyDouble PropertyFunction(MyDouble, MyDouble);
+ 
+ static PropertyFunction *solver2_region3_propfn(FREESTEAM_CHAR A){
+ 	switch(A){
+@@ -50,7 +50,7 @@
+ }
+ 
+ /* this function is a needed bit of a redundancy with solver2 in region 4 */
+-static double solver2_region4_p_Tx(double T, double x){
++static MyDouble solver2_region4_p_Tx(MyDouble T, MyDouble x){
+ 	(void)x;
+ 	return freesteam_region4_psat_T(T);
+ }
+@@ -67,7 +67,7 @@
+ }
+ 
+ /* completely unnecessary... */
+-static double solver2_region2_p_pT(double p, double T){
++static MyDouble solver2_region2_p_pT(MyDouble p, MyDouble T){
+ 	(void)T;
+ 	return p;
+ }
+@@ -84,7 +84,7 @@
+ }
+ 
+ /* completely unnecessary... */
+-static double solver2_region1_p_pT(double p, double T){
++static MyDouble solver2_region1_p_pT(MyDouble p, MyDouble T){
+ 	(void)T;
+ 	return p;
+ }
+@@ -104,7 +104,7 @@
+ typedef struct{
+ 	FREESTEAM_CHAR A,B;
+ 	PropertyFunction *Afn, *Bfn;
+-	double a,b;
++	MyDouble a,b;
+ } Solver2Data;
+ 
+ /*------------------------------------------------------------------------------
+@@ -113,8 +113,8 @@
+ 
+ static int region3_f(const gsl_vector *x, void *user_data, gsl_vector *f){
+ #define D ((Solver2Data *)user_data)
+-	double rho = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble rho = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	gsl_vector_set(f, 0, (*(D->Afn))(rho,T) - (D->a));
+ 	gsl_vector_set(f, 1, (*(D->Bfn))(rho,T) - (D->b));
+ 	return GSL_SUCCESS;
+@@ -123,8 +123,8 @@
+ 
+ static int region3_df(const gsl_vector *x, void *user_data, gsl_matrix *J){
+ #define D ((Solver2Data *)user_data)
+-	double rho = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble rho = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	SteamState S = freesteam_region3_set_rhoT(rho,T);
+ 	gsl_matrix_set(J, 0, 0, -1./SQ(rho)*freesteam_region3_dAdvT(D->A,S));
+ 	gsl_matrix_set(J, 0, 1, freesteam_region3_dAdTv(D->A,S));
+@@ -140,13 +140,13 @@
+ 
+ #if 0
+ static void region3_print_state(size_t iter, gsl_multiroot_fdfsolver *s){
+-	double rho = gsl_vector_get(s->x,0);
+-	double T = gsl_vector_get(s->x,1);
++	MyDouble rho = gsl_vector_get(s->x,0);
++	MyDouble T = gsl_vector_get(s->x,1);
+ 	fprintf(stderr,"iter = %lu: rho = %g, T = %g\n", iter,rho,T);
+ }
+ #endif
+ 
+-SteamState freesteam_solver2_region3(FREESTEAM_CHAR A, FREESTEAM_CHAR B, double atarget, double btarget, SteamState guess, int *retstatus){
++SteamState freesteam_solver2_region3(FREESTEAM_CHAR A, FREESTEAM_CHAR B, MyDouble atarget, MyDouble btarget, SteamState guess, int *retstatus){
+ 	const gsl_multiroot_fdfsolver_type *T;
+ 	gsl_multiroot_fdfsolver *s;
+ 	int status;
+@@ -191,8 +191,8 @@
+ 
+ static int region4_f(const gsl_vector *X, void *user_data, gsl_vector *f){
+ #define D ((Solver2Data *)user_data)
+-	double T = gsl_vector_get(X,0);
+-	double x = gsl_vector_get(X,1);
++	MyDouble T = gsl_vector_get(X,0);
++	MyDouble x = gsl_vector_get(X,1);
+ 	gsl_vector_set(f, 0, (*(D->Afn))(T,x) - (D->a));
+ 	gsl_vector_set(f, 1, (*(D->Bfn))(T,x) - (D->b));
+ 	return GSL_SUCCESS;
+@@ -216,13 +216,13 @@
+ 
+ #if 0
+ static void region4_print_state(size_t iter, gsl_multiroot_fdfsolver *s){
+-	double T = gsl_vector_get(s->x,0);
+-	double x = gsl_vector_get(s->x,1);
++	MyDouble T = gsl_vector_get(s->x,0);
++	MyDouble x = gsl_vector_get(s->x,1);
+ 	fprintf(stderr,"iter = %lu: T = %g, x = %g\n", iter,T,x);
+ }
+ #endif
+ 
+-SteamState freesteam_solver2_region4(FREESTEAM_CHAR A, FREESTEAM_CHAR B, double atarget, double btarget, SteamState guess, int *retstatus){
++SteamState freesteam_solver2_region4(FREESTEAM_CHAR A, FREESTEAM_CHAR B, MyDouble atarget, MyDouble btarget, SteamState guess, int *retstatus){
+ 	const gsl_multiroot_fdfsolver_type *T;
+ 	gsl_multiroot_fdfsolver *s;
+ 	int status;
+@@ -270,8 +270,8 @@
+ 
+ static int region2_f(const gsl_vector *x, void *user_data, gsl_vector *f){
+ #define D ((Solver2Data *)user_data)
+-	double p = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble p = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	gsl_vector_set(f, 0, (*(D->Afn))(p,T) - (D->a));
+ 	gsl_vector_set(f, 1, (*(D->Bfn))(p,T) - (D->b));
+ 	return GSL_SUCCESS;
+@@ -280,8 +280,8 @@
+ 
+ static int region2_df(const gsl_vector *x, void *user_data, gsl_matrix *J){
+ #define D ((Solver2Data *)user_data)
+-	double p = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble p = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	SteamState S = freesteam_region2_set_pT(p,T);
+ 	gsl_matrix_set(J, 0, 0, freesteam_region2_dAdpT(D->A,S));
+ 	gsl_matrix_set(J, 0, 1, freesteam_region2_dAdTp(D->A,S));
+@@ -296,12 +296,12 @@
+ }
+ 
+ static void region2_print_state(size_t iter, gsl_multiroot_fdfsolver *s){
+-	double p = gsl_vector_get(s->x,0);
+-	double T = gsl_vector_get(s->x,1);
++	MyDouble p = gsl_vector_get(s->x,0);
++	MyDouble T = gsl_vector_get(s->x,1);
+ 	fprintf(stderr,"iter = %lu: p = %g, T = %g\n", (long unsigned)iter,p,T);
+ }
+ 
+-SteamState freesteam_solver2_region2(FREESTEAM_CHAR A, FREESTEAM_CHAR B, double atarget, double btarget, SteamState guess, int *retstatus){
++SteamState freesteam_solver2_region2(FREESTEAM_CHAR A, FREESTEAM_CHAR B, MyDouble atarget, MyDouble btarget, SteamState guess, int *retstatus){
+ 	const gsl_multiroot_fdfsolver_type *T;
+ 	gsl_multiroot_fdfsolver *s;
+ 	int status;
+@@ -348,8 +348,8 @@
+ 
+ static int region1_f(const gsl_vector *x, void *user_data, gsl_vector *f){
+ #define D ((Solver2Data *)user_data)
+-	double p = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble p = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	gsl_vector_set(f, 0, (*(D->Afn))(p,T) - (D->a));
+ 	gsl_vector_set(f, 1, (*(D->Bfn))(p,T) - (D->b));
+ 	return GSL_SUCCESS;
+@@ -358,8 +358,8 @@
+ 
+ static int region1_df(const gsl_vector *x, void *user_data, gsl_matrix *J){
+ #define D ((Solver2Data *)user_data)
+-	double p = gsl_vector_get(x,0);
+-	double T = gsl_vector_get(x,1);
++	MyDouble p = gsl_vector_get(x,0);
++	MyDouble T = gsl_vector_get(x,1);
+ 	SteamState S = freesteam_region1_set_pT(p,T);
+ 	gsl_matrix_set(J, 0, 0, freesteam_region1_dAdpT(D->A,S));
+ 	gsl_matrix_set(J, 0, 1, freesteam_region1_dAdTp(D->A,S));
+@@ -375,13 +375,13 @@
+ 
+ #if 0
+ static void region1_print_state(size_t iter, gsl_multiroot_fdfsolver *s){
+-	double p = gsl_vector_get(s->x,0);
+-	double T = gsl_vector_get(s->x,1);
++	MyDouble p = gsl_vector_get(s->x,0);
++	MyDouble T = gsl_vector_get(s->x,1);
+ 	fprintf(stderr,"iter = %lu: p = %g, T = %g\n", iter,p,T);
+ }
+ #endif
+ 
+-SteamState freesteam_solver2_region1(FREESTEAM_CHAR A, FREESTEAM_CHAR B, double atarget, double btarget, SteamState guess, int *retstatus){
++SteamState freesteam_solver2_region1(FREESTEAM_CHAR A, FREESTEAM_CHAR B, MyDouble atarget, MyDouble btarget, SteamState guess, int *retstatus){
+ 	const gsl_multiroot_fdfsolver_type *T;
+ 	gsl_multiroot_fdfsolver *s;
+ 	int status;
+Index: freesteam-2.1/solver2.h
+===================================================================
+--- freesteam-2.1.orig/solver2.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/solver2.h	2013-06-27 08:50:17.000000000 +0200
+@@ -53,9 +53,9 @@
+ 
+ 	FIXME provide 'default' guess functions.
+ */
+-FREESTEAM_DLL SteamState freesteam_solver2_region1(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, double x, double y, SteamState guess, int *status);
+-FREESTEAM_DLL SteamState freesteam_solver2_region2(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, double x, double y, SteamState guess, int *status);
+-FREESTEAM_DLL SteamState freesteam_solver2_region3(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, double x, double y, SteamState guess, int *status);
+-FREESTEAM_DLL SteamState freesteam_solver2_region4(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, double x, double y, SteamState guess, int *status);
++FREESTEAM_DLL SteamState freesteam_solver2_region1(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, MyDouble x, MyDouble y, SteamState guess, int *status);
++FREESTEAM_DLL SteamState freesteam_solver2_region2(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, MyDouble x, MyDouble y, SteamState guess, int *status);
++FREESTEAM_DLL SteamState freesteam_solver2_region3(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, MyDouble x, MyDouble y, SteamState guess, int *status);
++FREESTEAM_DLL SteamState freesteam_solver2_region4(FREESTEAM_CHAR X, FREESTEAM_CHAR Y, MyDouble x, MyDouble y, SteamState guess, int *status);
+ 
+ #endif
+Index: freesteam-2.1/steam.c
+===================================================================
+--- freesteam-2.1.orig/steam.c	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/steam.c	2013-06-27 08:50:02.000000000 +0200
+@@ -33,7 +33,7 @@
+ 
+ /* 'setter' functions for SteamState (forwards equations) */
+ 
+-SteamState freesteam_region1_set_pT(double p, double T){
++SteamState freesteam_region1_set_pT(MyDouble p, MyDouble T){
+ 	SteamState S;
+ 	S.region = 1;
+ 	S.R1.p = p;
+@@ -42,7 +42,7 @@
+ 	return S;
+ }
+ 
+-SteamState freesteam_region2_set_pT(double p, double T){
++SteamState freesteam_region2_set_pT(MyDouble p, MyDouble T){
+ 	SteamState S;
+ 	S.region = 2;
+ 	S.R2.p = p;
+@@ -51,7 +51,7 @@
+ 	return S;
+ }
+ 
+-SteamState freesteam_region3_set_rhoT(double rho, double T){
++SteamState freesteam_region3_set_rhoT(MyDouble rho, MyDouble T){
+ 	SteamState S;
+ 	S.region = 3;
+ 	S.R3.rho = rho;
+@@ -60,7 +60,7 @@
+ 	return S;
+ }
+ 
+-SteamState freesteam_region4_set_Tx(double T, double x){
++SteamState freesteam_region4_set_Tx(MyDouble T, MyDouble x){
+ 	SteamState S;
+ 	S.region = 4;
+ 	S.R4.T = T;
+@@ -95,7 +95,7 @@
+ 	return (int)S.region;
+ }
+ 
+-double freesteam_T(SteamState S){
++MyDouble freesteam_T(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return S.R1.T;
+@@ -111,7 +111,7 @@
+ 	}
+ }
+ 
+-double freesteam_p(SteamState S){
++MyDouble freesteam_p(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return S.R1.p;
+@@ -128,7 +128,7 @@
+ }
+ 
+ 
+-double freesteam_v(SteamState S){
++MyDouble freesteam_v(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_v_pT(S.R1.p,S.R1.T);
+@@ -144,7 +144,7 @@
+ 	}
+ }
+ 
+-double freesteam_rho(SteamState S){
++MyDouble freesteam_rho(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return 1./freesteam_region1_v_pT(S.R1.p,S.R1.T);
+@@ -161,7 +161,7 @@
+ }
+ 
+ 
+-double freesteam_u(SteamState S){
++MyDouble freesteam_u(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_u_pT(S.R1.p, S.R1.T);
+@@ -177,7 +177,7 @@
+ 	}
+ }
+ 
+-double freesteam_h(SteamState S){
++MyDouble freesteam_h(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_h_pT(S.R1.p, S.R1.T);
+@@ -194,7 +194,7 @@
+ }
+ 
+ 
+-double freesteam_s(SteamState S){
++MyDouble freesteam_s(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_s_pT(S.R1.p, S.R1.T);
+@@ -210,7 +210,7 @@
+ 	}
+ }
+ 
+-double freesteam_cp(SteamState S){
++MyDouble freesteam_cp(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_cp_pT(S.R1.p, S.R1.T);
+@@ -226,7 +226,7 @@
+ 	}
+ }
+ 
+-double freesteam_cv(SteamState S){
++MyDouble freesteam_cv(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_cv_pT(S.R1.p, S.R1.T);
+@@ -242,7 +242,7 @@
+ 	}
+ }
+ 
+-double freesteam_w(SteamState S){
++MyDouble freesteam_w(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return freesteam_region1_w_pT(S.R1.p, S.R1.T);
+@@ -260,7 +260,7 @@
+ 	}
+ }
+ 
+-double freesteam_x(SteamState S){
++MyDouble freesteam_x(SteamState S){
+ 	switch(S.region){
+ 		case 1:
+ 			return 0.;
+@@ -277,7 +277,7 @@
+ 	}
+ }
+ 
+-double freesteam_mu(SteamState S){
++MyDouble freesteam_mu(SteamState S){
+ 	static char warned = 0;
+ 	switch(S.region){
+ 		case 1:
+@@ -298,7 +298,7 @@
+ 	}
+ }
+ 
+-double freesteam_k(SteamState S){
++MyDouble freesteam_k(SteamState S){
+ 	static char warned = 0;
+ 	switch(S.region){
+ 		case 1:
+Index: freesteam-2.1/steam.h
+===================================================================
+--- freesteam-2.1.orig/steam.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam.h	2013-06-27 08:50:17.000000000 +0200
+@@ -24,19 +24,19 @@
+ #include <stdio.h>
+ 
+ typedef struct SteamState_R1_struct{
+-	double p, T;
++	MyDouble p, T;
+ } SteamState_R1;
+ 
+ typedef struct SteamState_R2_struct{
+-	double p, T;
++	MyDouble p, T;
+ } SteamState_R2;
+ 
+ typedef struct SteamState_R3_struct{
+-	double rho, T;
++	MyDouble rho, T;
+ } SteamState_R3;
+ 
+ typedef struct SteamState_R4_struct{
+-	double T, x;
++	MyDouble T, x;
+ } SteamState_R4;
+ 
+ typedef struct SteamState_struct{
+@@ -51,10 +51,10 @@
+ 
+ FREESTEAM_DLL int freesteam_region(SteamState S);
+ 
+-FREESTEAM_DLL SteamState freesteam_region1_set_pT(double p, double T);
+-FREESTEAM_DLL SteamState freesteam_region2_set_pT(double p, double T);
+-FREESTEAM_DLL SteamState freesteam_region3_set_rhoT(double rho, double T);
+-FREESTEAM_DLL SteamState freesteam_region4_set_Tx(double T, double x);
++FREESTEAM_DLL SteamState freesteam_region1_set_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL SteamState freesteam_region2_set_pT(MyDouble p, MyDouble T);
++FREESTEAM_DLL SteamState freesteam_region3_set_rhoT(MyDouble rho, MyDouble T);
++FREESTEAM_DLL SteamState freesteam_region4_set_Tx(MyDouble T, MyDouble x);
+ 
+ FREESTEAM_DLL int freesteam_fprint(FILE *f, SteamState S);
+ 
+@@ -66,23 +66,23 @@
+ # define FREESTEAM_DEBUG(NAME,STATE)
+ #endif
+ 
+-typedef double SteamPropertyFunction(SteamState S);
++typedef MyDouble SteamPropertyFunction(SteamState S);
+ 
+-FREESTEAM_DLL double freesteam_p(SteamState S);
+-FREESTEAM_DLL double freesteam_T(SteamState S);
+-FREESTEAM_DLL double freesteam_rho(SteamState S);
+-FREESTEAM_DLL double freesteam_v(SteamState S);
+-FREESTEAM_DLL double freesteam_u(SteamState S);
+-FREESTEAM_DLL double freesteam_h(SteamState S);
+-FREESTEAM_DLL double freesteam_s(SteamState S);
+-FREESTEAM_DLL double freesteam_cp(SteamState S);
+-FREESTEAM_DLL double freesteam_cv(SteamState S);
+-FREESTEAM_DLL double freesteam_w(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_p(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_T(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_rho(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_v(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_u(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_h(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_s(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_cp(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_cv(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_w(SteamState S);
+ 
+-FREESTEAM_DLL double freesteam_x(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_x(SteamState S);
+ 
+-FREESTEAM_DLL double freesteam_mu(SteamState S);
+-FREESTEAM_DLL double freesteam_k(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_mu(SteamState S);
++FREESTEAM_DLL MyDouble freesteam_k(SteamState S);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_Ts.c
+===================================================================
+--- freesteam-2.1.orig/steam_Ts.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_Ts.c	2013-06-27 08:50:05.000000000 +0200
+@@ -33,7 +33,7 @@
+ #include <assert.h>
+ #include <math.h>
+ 
+-int freesteam_bounds_Ts(double T, double s, int verbose){
++int freesteam_bounds_Ts(MyDouble T, MyDouble s, int verbose){
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (T = %g, s = %g kJ/kgK)\n"\
+@@ -49,20 +49,20 @@
+ 		return 2;
+ 	}
+ 
+-	double smax = freesteam_region2_s_pT(0.,T);
++	MyDouble smax = freesteam_region2_s_pT(0.,T);
+ 	if(s > smax){
+ 		BOUND_WARN("s > smax");
+ 		return 3;
+ 	}
+ 
+ 	if(T <= REGION1_TMAX){
+-		double smin = freesteam_region1_s_pT(IAPWS97_PMAX,T);
++		MyDouble smin = freesteam_region1_s_pT(IAPWS97_PMAX,T);
+ 		if(s < smin){
+ 			BOUND_WARN("s < smin (region 1)");
+ 			return 4;
+ 		}
+ 	}else if(T > freesteam_b23_T_p(IAPWS97_PMAX)){
+-		double smin = freesteam_region2_s_pT(IAPWS97_PMAX,T);
++		MyDouble smin = freesteam_region2_s_pT(IAPWS97_PMAX,T);
+ 		if(s < smin){
+ 			BOUND_WARN("s < smin (region 2)");
+ 			return 4;
+@@ -71,7 +71,7 @@
+ 		/* region 3, need to iterate */
+ 		SteamState S = freesteam_bound_pmax_T(T);
+ 		//assert(S.region==3);
+-		double smin = freesteam_s(S);
++		MyDouble smin = freesteam_s(S);
+ 		if(s < smin){
+ 			BOUND_WARN("s < smin (region 3)");
+ 			return 4;
+@@ -81,12 +81,12 @@
+ #undef BOUND_WARN
+ }
+ 
+-int freesteam_region_Ts(double T, double s){
++int freesteam_region_Ts(MyDouble T, MyDouble s){
+ 
+ 	if(T <= REGION1_TMAX){
+-		double p = freesteam_region4_psat_T(T);
+-		double sf = freesteam_region1_s_pT(p,T);
+-		double sg = freesteam_region2_s_pT(p,T);
++		MyDouble p = freesteam_region4_psat_T(T);
++		MyDouble sf = freesteam_region1_s_pT(p,T);
++		MyDouble sg = freesteam_region2_s_pT(p,T);
+ 		if(s <= sf){
+ 			return 1;
+ 		}
+@@ -101,8 +101,8 @@
+ 
+ 	//if(s < 3.6e3)return 3;
+ 
+-	double p23 = freesteam_b23_p_T(T);
+-	double s23 = freesteam_region2_s_pT(p23,T);
++	MyDouble p23 = freesteam_b23_p_T(T);
++	MyDouble s23 = freesteam_region2_s_pT(p23,T);
+ 	if(s >= s23){
+ 		return 2;
+ 	}
+@@ -113,49 +113,49 @@
+ 	if(s < 3.7e3)return 3;
+ 
+ 	/* FIXME iterate to improve location of saturation curve? */
+-	double psat = freesteam_region3_psat_s(s);
+-	double Tsat = freesteam_region4_Tsat_p(psat);
++	MyDouble psat = freesteam_region3_psat_s(s);
++	MyDouble Tsat = freesteam_region4_Tsat_p(psat);
+ 	if(T > Tsat)return 3;
+ 	
+ 	return 4;
+ }
+ 
+ typedef struct{
+-	double T, s, psat;
++	MyDouble T, s, psat;
+ } SolveTSData;
+ 
+ #define D ((SolveTSData *)user_data)
+ static ZeroInSubjectFunction Ts_region1_fn, Ts_region2_fn, Ts_region4_fn1, Ts_region4_fn2;
+-double Ts_region1_fn(double p, void *user_data){
++MyDouble Ts_region1_fn(MyDouble p, void *user_data){
+ 	return D->s - freesteam_region1_s_pT(p, D->T);
+ }
+-double Ts_region2_fn(double p, void *user_data){
++MyDouble Ts_region2_fn(MyDouble p, void *user_data){
+ 	return D->s - freesteam_region2_s_pT(p, D->T);
+ }
+-double Ts_region3_fn(double rho, void *user_data){
++MyDouble Ts_region3_fn(MyDouble rho, void *user_data){
+ 	return D->s - freesteam_region3_s_rhoT(rho, D->T);
+ }
+ 
+-double Ts_region4_fn1(double x, void *user_data){
++MyDouble Ts_region4_fn1(MyDouble x, void *user_data){
+ 	/* for region 4 where T < REGION1_TMAX */
+-	double sf = freesteam_region1_s_pT(D->psat,D->T);
+-	double sg = freesteam_region2_s_pT(D->psat,D->T);
++	MyDouble sf = freesteam_region1_s_pT(D->psat,D->T);
++	MyDouble sg = freesteam_region2_s_pT(D->psat,D->T);
+ 	return D->s - (sf + x*(sg-sf));
+ }
+ 
+-double Ts_region4_fn2(double x, void *user_data){
++MyDouble Ts_region4_fn2(MyDouble x, void *user_data){
+ 	/* for region 4 where T > REGION1_TMAX */
+-	double rhof = freesteam_region4_rhof_T(D->T);
+-	double rhog = freesteam_region4_rhog_T(D->T);
+-	double sf = freesteam_region3_s_rhoT(rhof,D->T);
+-	double sg = freesteam_region3_s_rhoT(rhog,D->T);
++	MyDouble rhof = freesteam_region4_rhof_T(D->T);
++	MyDouble rhog = freesteam_region4_rhog_T(D->T);
++	MyDouble sf = freesteam_region3_s_rhoT(rhof,D->T);
++	MyDouble sg = freesteam_region3_s_rhoT(rhog,D->T);
+ 	/* TODO: iteratively improve guess with forward fns*/
+ 	return D->s - (sf + x*(sg-sf));
+ }
+ #undef D
+ 
+-SteamState freesteam_set_Ts(double T, double s){
+-	double lb, ub, tol, sol = 0, err;
++SteamState freesteam_set_Ts(MyDouble T, MyDouble s){
++	MyDouble lb, ub, tol, sol = 0, err;
+ 	SolveTSData D = {T, s, 0};
+ 
+ 	int region = freesteam_region_Ts(T,s);
+Index: freesteam-2.1/steam_Ts.h
+===================================================================
+--- freesteam-2.1.orig/steam_Ts.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_Ts.h	2013-06-27 08:50:20.000000000 +0200
+@@ -22,11 +22,11 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL int freesteam_bounds_Ts(double T, double s, int verbose);
++FREESTEAM_DLL int freesteam_bounds_Ts(MyDouble T, MyDouble s, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_Ts(double T, double s);
++FREESTEAM_DLL int freesteam_region_Ts(MyDouble T, MyDouble s);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_Ts(double T, double s);
++FREESTEAM_DLL SteamState freesteam_set_Ts(MyDouble T, MyDouble s);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_Tx.c
+===================================================================
+--- freesteam-2.1.orig/steam_Tx.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_Tx.c	2013-06-27 08:50:05.000000000 +0200
+@@ -32,7 +32,7 @@
+ #include <math.h>
+ 
+ 
+-int freesteam_bounds_Tx(double T, double x, int verbose){
++int freesteam_bounds_Tx(MyDouble T, MyDouble x, int verbose){
+ 
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+@@ -60,7 +60,7 @@
+ #undef BOUND_WARN
+ }
+ 
+-int freesteam_region_Tx(double T, double x){
++int freesteam_region_Tx(MyDouble T, MyDouble x){
+ 	if(T >= IAPWS97_TCRIT)return 3;
+ 
+ 	if(x <= 0){
+@@ -77,10 +77,10 @@
+ }
+ 
+ typedef struct{
+-	double T, s;
++	MyDouble T, s;
+ } SolveTSData;
+ 
+-static double Ts_region3_fn(double rho, void *user_data){
++static MyDouble Ts_region3_fn(MyDouble rho, void *user_data){
+ #define D ((SolveTSData *)user_data)
+ 	return D->s - freesteam_region3_s_rhoT(rho, D->T);
+ #undef D
+@@ -91,17 +91,17 @@
+ 	values of x are being 'understood' here (although one can give them meaning
+ 	based on extrapolated values of u or h of v, for example...)
+ */
+-SteamState freesteam_set_Tx(double T, double x){
++SteamState freesteam_set_Tx(MyDouble T, MyDouble x){
+ 	SteamState S;
+ 
+ 	if(T >= IAPWS97_TCRIT){
+ 		/* region 3 supercritical. just return a state with the specified
+ 		temperature and the critical point entropy. arbitrary. */
+ 		SolveTSData D = {T, freesteam_region3_s_rhoT(IAPWS97_RHOCRIT, IAPWS97_TCRIT)};
+-		double ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
+-		double lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
+-		double tol = 1e-7;
+-		double sol, err = 0;
++		MyDouble ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
++		MyDouble lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
++		MyDouble tol = 1e-7;
++		MyDouble sol, err = 0;
+ 		if(zeroin_solve(&Ts_region3_fn, &D, lb, ub, tol, &sol, &err)){
+ 			fprintf(stderr,"%s (%s:%d): failed to solve for rho\n",__func__,__FILE__,__LINE__);
+ 			exit(1);
+Index: freesteam-2.1/steam_Tx.h
+===================================================================
+--- freesteam-2.1.orig/steam_Tx.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_Tx.h	2013-06-27 08:50:20.000000000 +0200
+@@ -22,11 +22,11 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL int freesteam_bounds_Tx(double T, double x, int verbose);
++FREESTEAM_DLL int freesteam_bounds_Tx(MyDouble T, MyDouble x, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_Tx(double T, double x);
++FREESTEAM_DLL int freesteam_region_Tx(MyDouble T, MyDouble x);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_Tx(double T, double x);
++FREESTEAM_DLL SteamState freesteam_set_Tx(MyDouble T, MyDouble x);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_pT.c
+===================================================================
+--- freesteam-2.1.orig/steam_pT.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pT.c	2013-06-27 08:50:04.000000000 +0200
+@@ -30,10 +30,10 @@
+ #include <math.h>
+ 
+ typedef struct{
+-	double p, T;
++	MyDouble p, T;
+ } SteamPTData;
+ 
+-static double pT_region3_fn(double rho, void *user_data){
++static MyDouble pT_region3_fn(MyDouble rho, void *user_data){
+ #define D ((SteamPTData *)user_data)
+ 	return D->p - freesteam_region3_p_rhoT(rho, D->T);
+ #undef D
+@@ -44,7 +44,7 @@
+ 	to 'sit on the knife' of saturation. If you need to set saturated states,
+ 	you should use another function such as freesteam_region1_set_Tx.
+ */
+-SteamState freesteam_set_pT(double p, double T){
++SteamState freesteam_set_pT(MyDouble p, MyDouble T){
+ 	SteamState S;
+ 	if(T < REGION1_TMAX){
+ 		if(p > freesteam_region4_psat_T(T)){
+@@ -59,8 +59,8 @@
+ 	}else{
+ 		//fprintf(stderr,"%s: T = %g >= REGION1_TMAX = %g\n",__func__,T,REGION1_TMAX);
+ 		/* FIXME some optimisation possiblxe here with test for lower pressures */
+-		double T23 = freesteam_b23_T_p(p);
+-		double p23min = freesteam_b23_p_T(REGION1_TMAX);
++		MyDouble T23 = freesteam_b23_T_p(p);
++		MyDouble p23min = freesteam_b23_p_T(REGION1_TMAX);
+ 		if(p < p23min || T > T23){
+ 			//fprintf(stderr,"%s: T = %g > T23 =  %g\n",__func__,T,T23);
+ 			S.region = 2;
+@@ -70,11 +70,11 @@
+ 			/* FIXME the limit values are all wrong here! */
+ 			//fprintf(stderr,"%s: region 3\n",__func__);
+ 			SteamPTData D = {p,T};
+-			double ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
+-			double lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
++			MyDouble ub = 1./freesteam_region1_v_pT(IAPWS97_PMAX,REGION1_TMAX);
++			MyDouble lb = 1./freesteam_region2_v_pT(freesteam_b23_p_T(T),T);
+ 			/* if we're in the little wee area around the critical pt... */
+ 			if(T < IAPWS97_TCRIT){
+-				double psat = freesteam_region4_psat_T(T);
++				MyDouble psat = freesteam_region4_psat_T(T);
+ 				if(p < psat){
+ 					ub = freesteam_region4_rhog_T(T);
+ 					assert(lb<ub);
+@@ -84,8 +84,8 @@
+ 					assert(lb<ub);
+ 				}
+ 			}
+-			double tol = 1e-7;
+-			double sol, err = 0;
++			MyDouble tol = 1e-7;
++			MyDouble sol, err = 0;
+ 			if(zeroin_solve(&pT_region3_fn, &D, lb, ub, tol, &sol, &err)){
+ 				fprintf(stderr,"%s (%s:%d): failed to solve for rho\n",__func__,__FILE__,__LINE__);
+ 				exit(1);
+Index: freesteam-2.1/steam_pT.h
+===================================================================
+--- freesteam-2.1.orig/steam_pT.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pT.h	2013-06-27 08:50:19.000000000 +0200
+@@ -23,7 +23,7 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL SteamState freesteam_set_pT(double p, double T);
++FREESTEAM_DLL SteamState freesteam_set_pT(MyDouble p, MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_ph.c
+===================================================================
+--- freesteam-2.1.orig/steam_ph.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_ph.c	2013-06-27 08:50:03.000000000 +0200
+@@ -34,7 +34,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-int freesteam_bounds_ph(double p, double h, int verbose){
++int freesteam_bounds_ph(MyDouble p, MyDouble h, int verbose){
+ 
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+@@ -51,12 +51,12 @@
+ 		return 2;
+ 	}
+ 
+-	double hmax = freesteam_region2_h_pT(p,REGION2_TMAX);
++	MyDouble hmax = freesteam_region2_h_pT(p,REGION2_TMAX);
+ 	if(h>hmax){
+ 		BOUND_WARN("h > hmax");
+ 		return 3;
+ 	}
+-	double hmin = freesteam_region1_h_pT(p,IAPWS97_TMIN);
++	MyDouble hmin = freesteam_region1_h_pT(p,IAPWS97_TMIN);
+ 	if(h < hmin){
+ 		BOUND_WARN("h < hmin");
+ 		return 4;
+@@ -65,22 +65,22 @@
+ #undef BOUND_WARN
+ }
+ 
+-int freesteam_region_ph(double p, double h){
++int freesteam_region_ph(MyDouble p, MyDouble h){
+ 	//fprintf(stderr,"freesteam_set_ph(p = %f, h = %f)\n",p,h);
+ 
+-	double p13 = 0;
++	MyDouble p13 = 0;
+ 	p13 = freesteam_region4_psat_T(REGION1_TMAX);
+ 
+ 	//fprintf(stderr,"p13 = %lf MPa\n",p13/1.e6);
+ 	//fprintf(stderr,"check: %f\n",freesteam_region4_psat_T(REGION1_TMAX));
+ 
+ 	if(p <= p13){
+-		double Tsat = freesteam_region4_Tsat_p(p);
+-		double hf = freesteam_region1_h_pT(p,Tsat);
++		MyDouble Tsat = freesteam_region4_Tsat_p(p);
++		MyDouble hf = freesteam_region1_h_pT(p,Tsat);
+ 		if(h<hf){
+ 			return 1;
+ 		}
+-		double hg = freesteam_region2_h_pT(p,Tsat);
++		MyDouble hg = freesteam_region2_h_pT(p,Tsat);
+ 		if(h>hg){
+ 			return 2;
+ 		}
+@@ -88,19 +88,19 @@
+ 		return 4;
+ 	}
+ 
+-	double h13 = freesteam_region1_h_pT(p,REGION1_TMAX);
++	MyDouble h13 = freesteam_region1_h_pT(p,REGION1_TMAX);
+ 	if(h <= h13){
+ 		return 1;
+ 	}
+ 
+-	double T23 = freesteam_b23_T_p(p);
++	MyDouble T23 = freesteam_b23_T_p(p);
+ 	//fprintf(stderr,"p = %f MPa --> T23(p) = %f K (%f °C)\n",p/1e6,T23,T23-273.15);
+-	double h23 = freesteam_region2_h_pT(p,T23);
++	MyDouble h23 = freesteam_region2_h_pT(p,T23);
+ 	if(h >= h23){
+ 		return 2;
+ 	}
+ 
+-	double psat = freesteam_region3_psat_h(h);
++	MyDouble psat = freesteam_region3_psat_h(h);
+ 	if(p > psat){
+ 		return 3;
+ 	}
+@@ -111,18 +111,18 @@
+ 
+ 
+ typedef struct SolvePHData_struct{
+-	double p, h;
++	MyDouble p, h;
+ } SolvePHData;
+ 
+ #define D ((SolvePHData *)user_data)
+ static ZeroInSubjectFunction ph_region2_fn;
+-double ph_region2_fn(double T, void *user_data){
++MyDouble ph_region2_fn(MyDouble T, void *user_data){
+ 	return D->h - freesteam_region2_h_pT(D->p, T);
+ }
+ #undef D
+ 
+ 
+-SteamState freesteam_set_ph(double p, double h){
++SteamState freesteam_set_ph(MyDouble p, MyDouble h){
+ 	SteamState S;
+ 	S.region = (char)freesteam_region_ph(p,h);
+ 	//int status;
+@@ -141,10 +141,10 @@
+ 			S.R2.p = p;
+ 			S.R2.T = freesteam_region2_T_ph(p, h);
+ 			{
+-				double lb = S.R2.T * 0.999;
+-				double ub = S.R2.T * 1.001;
+-				double tol = 1e-9; /* ??? */
+-				double sol, err;
++				MyDouble lb = S.R2.T * 0.999;
++				MyDouble ub = S.R2.T * 1.001;
++				MyDouble tol = 1e-9; /* ??? */
++				MyDouble sol, err;
+ 				SolvePHData D = {p, h};
+ 				zeroin_solve(&ph_region2_fn, &D, lb, ub, tol, &sol, &err);
+ 				S.R2.T = sol;
+@@ -173,14 +173,14 @@
+ 		case 4:
+ 			S.R4.T = freesteam_region4_Tsat_p(p);
+ 			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.R4.T);
+-			double hf, hg;
++			MyDouble hf, hg;
+ 			if(S.R4.T <= REGION1_TMAX){
+ 				hf = freesteam_region1_h_pT(p,S.R4.T);
+ 				hg = freesteam_region2_h_pT(p,S.R4.T);
+ 			}else{
+ 				/* TODO iteratively improve estimate of T */
+-				double rhof = freesteam_region4_rhof_T(S.R4.T);
+-				double rhog = freesteam_region4_rhog_T(S.R4.T);
++				MyDouble rhof = freesteam_region4_rhof_T(S.R4.T);
++				MyDouble rhog = freesteam_region4_rhog_T(S.R4.T);
+ 				/* FIXME iteratively improve these estimates of rhof, rhog */
+ 				hf = freesteam_region3_h_rhoT(rhof,S.R4.T);
+ 				hg = freesteam_region3_h_rhoT(rhog,S.R4.T);
+Index: freesteam-2.1/steam_ph.h
+===================================================================
+--- freesteam-2.1.orig/steam_ph.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_ph.h	2013-06-27 08:50:18.000000000 +0200
+@@ -22,11 +22,11 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL int freesteam_bounds_ph(double p, double h, int verbose);
++FREESTEAM_DLL int freesteam_bounds_ph(MyDouble p, MyDouble h, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_ph(double p, double h);
++FREESTEAM_DLL int freesteam_region_ph(MyDouble p, MyDouble h);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_ph(double p, double h);
++FREESTEAM_DLL SteamState freesteam_set_ph(MyDouble p, MyDouble h);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_ps.c
+===================================================================
+--- freesteam-2.1.orig/steam_ps.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_ps.c	2013-06-27 08:50:03.000000000 +0200
+@@ -30,7 +30,7 @@
+ 
+ #include <stdlib.h>
+ 
+-int freesteam_bounds_ps(double p, double s, int verbose){
++int freesteam_bounds_ps(MyDouble p, MyDouble s, int verbose){
+ 	if(p < 0){
+ 		if(verbose){
+ 			fprintf(stderr,"%s (%s:%d): WARNING p < 0 (p = %g MPa, s = %g kJ/kgK)\n"
+@@ -45,7 +45,7 @@
+ 		}
+ 		return 2;
+ 	}
+-	double smin = freesteam_region1_s_pT(p, IAPWS97_TMIN);
++	MyDouble smin = freesteam_region1_s_pT(p, IAPWS97_TMIN);
+ 	if(s < smin){
+ 		if(verbose){
+ 			fprintf(stderr,"%s (%s:%d): WARNING s < smin (p = %g MPa, s = %g kJ/kgK)\n"
+@@ -53,7 +53,7 @@
+ 		}
+ 		return 3;
+ 	}
+-	double smax = freesteam_region2_s_pT(p, IAPWS97_TMAX);
++	MyDouble smax = freesteam_region2_s_pT(p, IAPWS97_TMAX);
+ 	if(s > smax){
+ 		if(verbose){
+ 			fprintf(stderr,"%s (%s:%d): WARNING s > smax (p = %g MPa, s = %g kJ/kgK)\n"
+@@ -64,15 +64,15 @@
+ 	return 0;
+ }
+ 
+-int freesteam_region_ps(double p, double s){
++int freesteam_region_ps(MyDouble p, MyDouble s){
+ 	// FIXME add test/warning for max S
+ 
+ 	// FIXME check p > min p, p < max p, s > 0
+ 
+ 	if(p <= freesteam_region4_psat_T(REGION1_TMAX)){
+-		double T = freesteam_region4_Tsat_p(p);
+-		double sf = freesteam_region1_s_pT(p,T);
+-		double sg = freesteam_region2_s_pT(p,T);
++		MyDouble T = freesteam_region4_Tsat_p(p);
++		MyDouble sf = freesteam_region1_s_pT(p,T);
++		MyDouble sg = freesteam_region2_s_pT(p,T);
+ 		if(s <= sf){
+ 			return 1;
+ 		}
+@@ -83,25 +83,25 @@
+ 	}
+ 
+ 	/* FIXME solve for s_b13(p) */
+-	double s_b13 = freesteam_region1_s_pT(p, REGION1_TMAX);
++	MyDouble s_b13 = freesteam_region1_s_pT(p, REGION1_TMAX);
+ 
+ 	if(s <= s_b13){
+ 		return 1;
+ 	}
+ 
+ 	/* FIXME solve for s_b23(p) */
+-	double T_b23 = freesteam_b23_T_p(p);
+-	double s_b23 = freesteam_region2_s_pT(p,T_b23);
++	MyDouble T_b23 = freesteam_b23_T_p(p);
++	MyDouble s_b23 = freesteam_region2_s_pT(p,T_b23);
+ 	if(s >= s_b23){
+ 		return 2;
+ 	}
+ 
+ 	if(p < IAPWS97_PCRIT){ /* but not in region 1/2 */
+-		double T = freesteam_region4_Tsat_p(p);
+-		double rhof = freesteam_region4_rhof_T(T);
+-		double rhog = freesteam_region4_rhog_T(T);
+-		double sf = freesteam_region3_s_rhoT(rhof,T);
+-		double sg = freesteam_region3_s_rhoT(rhog,T);
++		MyDouble T = freesteam_region4_Tsat_p(p);
++		MyDouble rhof = freesteam_region4_rhof_T(T);
++		MyDouble rhog = freesteam_region4_rhog_T(T);
++		MyDouble sf = freesteam_region3_s_rhoT(rhof,T);
++		MyDouble sg = freesteam_region3_s_rhoT(rhog,T);
+ 		if(s <= sf || s >= sg)return 3;
+ 		return 4;
+ 	}
+@@ -110,25 +110,25 @@
+ }
+ 
+ typedef struct SolvePSData_struct{
+-	double p, s, T;
++	MyDouble p, s, T;
+ } SolvePSData;
+ 
+ #define D ((SolvePSData *)user_data)
+ static ZeroInSubjectFunction ps_region1_fn, ps_region2_fn, ps_region4_fn;
+-double ps_region1_fn(double T, void *user_data){
++MyDouble ps_region1_fn(MyDouble T, void *user_data){
+ 	return D->s - freesteam_region1_s_pT(D->p, T);
+ }
+-double ps_region2_fn(double T, void *user_data){
++MyDouble ps_region2_fn(MyDouble T, void *user_data){
+ 	return D->s - freesteam_region2_s_pT(D->p, T);
+ }
+-double ps_region4_fn(double x, void *user_data){
+-	double T = freesteam_region4_Tsat_p(D->p);
++MyDouble ps_region4_fn(MyDouble x, void *user_data){
++	MyDouble T = freesteam_region4_Tsat_p(D->p);
+ 	return D->s - freesteam_region4_s_Tx(T, x);
+ }
+ #undef D
+ 
+-SteamState freesteam_set_ps(double p, double s){
+-	double lb, ub, tol, sol, err;
++SteamState freesteam_set_ps(MyDouble p, MyDouble s){
++	MyDouble lb, ub, tol, sol, err;
+ 	SolvePSData D = {p, s, 0.};
+ 
+ 	int region = freesteam_region_ps(p,s);
+@@ -151,8 +151,8 @@
+ 		/* FIXME looks like a problem with the derivative routines here? */
+ 			{
+ 				int status;
+-				double v = freesteam_region3_v_ps(p,s);
+-				double T = freesteam_region3_T_ps(p,s);
++				MyDouble v = freesteam_region3_v_ps(p,s);
++				MyDouble T = freesteam_region3_T_ps(p,s);
+ 				SteamState guess = freesteam_region3_set_rhoT(1./v,T);
+ 				//SteamState guess = freesteam_region3_set_rhoT(322,700);
+ 				SteamState S = freesteam_solver2_region3('p','s', p, s, guess, &status);
+@@ -169,8 +169,8 @@
+ #else
+ 			{
+ 				SteamState S;
+-				double v = freesteam_region3_v_ps(p,s);
+-				double T = freesteam_region3_T_ps(p,s);
++				MyDouble v = freesteam_region3_v_ps(p,s);
++				MyDouble T = freesteam_region3_T_ps(p,s);
+ 				S = freesteam_region3_set_rhoT(1./v,T);
+ 				if((freesteam_p(S) - p) > 30000){
+ 					fprintf(stderr,"%s (%s:%d): Failed p solution in region 3(p,s)"	
+Index: freesteam-2.1/steam_ps.h
+===================================================================
+--- freesteam-2.1.orig/steam_ps.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_ps.h	2013-06-27 08:50:18.000000000 +0200
+@@ -27,11 +27,11 @@
+ 	@return zero if within bounds, or non-zero if out-of-bounds
+ 	(different values for different	boundary violations)
+ */
+-FREESTEAM_DLL int freesteam_bounds_ps(double p, double s, int verbose);
++FREESTEAM_DLL int freesteam_bounds_ps(MyDouble p, MyDouble s, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_ps(double p, double s);
++FREESTEAM_DLL int freesteam_region_ps(MyDouble p, MyDouble s);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_ps(double p, double s);
++FREESTEAM_DLL SteamState freesteam_set_ps(MyDouble p, MyDouble s);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_pu.c
+===================================================================
+--- freesteam-2.1.orig/steam_pu.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pu.c	2013-06-27 08:50:04.000000000 +0200
+@@ -34,22 +34,22 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-int freesteam_region_pu(double p, double u){
+-	double p13 = freesteam_region4_psat_T(REGION1_TMAX);
++int freesteam_region_pu(MyDouble p, MyDouble u){
++	MyDouble p13 = freesteam_region4_psat_T(REGION1_TMAX);
+ 	if(p < p13){
+-		double Tsat = freesteam_region4_Tsat_p(p);
+-		double uf = freesteam_region1_u_pT(p,Tsat);
++		MyDouble Tsat = freesteam_region4_Tsat_p(p);
++		MyDouble uf = freesteam_region1_u_pT(p,Tsat);
+ 		if(u < uf)return 1;
+-		double ug = freesteam_region2_u_pT(p,Tsat);
++		MyDouble ug = freesteam_region2_u_pT(p,Tsat);
+ 		if(u > ug)return 2;
+ 		return 4;
+ 	}
+-	double u13 = freesteam_region1_u_pT(p,REGION1_TMAX);
++	MyDouble u13 = freesteam_region1_u_pT(p,REGION1_TMAX);
+ 	if(u < u13){
+ 		return 1;
+ 	}
+-	double T23 = freesteam_b23_T_p(p);
+-	double u23 = freesteam_region2_u_pT(p,T23);
++	MyDouble T23 = freesteam_b23_T_p(p);
++	MyDouble u23 = freesteam_region2_u_pT(p,T23);
+ 	if(u > u23){
+ 		return 2;
+ 	}
+@@ -59,35 +59,35 @@
+ 	/* FIXME what we really need here is a psat(u) function! The current method
+ 	is singular. */
+ 	
+-	double Tsat = freesteam_region4_Tsat_p(p);
+-	double rhof = freesteam_region4_rhof_T(Tsat);
+-	double uf = freesteam_region3_u_rhoT(rhof,Tsat);
++	MyDouble Tsat = freesteam_region4_Tsat_p(p);
++	MyDouble rhof = freesteam_region4_rhof_T(Tsat);
++	MyDouble uf = freesteam_region3_u_rhoT(rhof,Tsat);
+ 	if(u<uf) return 3;
+-	double rhog = freesteam_region4_rhog_T(Tsat);
+-	double ug = freesteam_region3_u_rhoT(rhog,Tsat);
++	MyDouble rhog = freesteam_region4_rhog_T(Tsat);
++	MyDouble ug = freesteam_region3_u_rhoT(rhog,Tsat);
+ 	if(u>ug)return 3;
+ 	return 4;
+ }
+ 
+ typedef struct{
+-	double p, u, T;
++	MyDouble p, u, T;
+ } SolvePUData;
+ 
+ #define D ((SolvePUData *)user_data)
+ static ZeroInSubjectFunction pu_region1_fn, pu_region2_fn, pu_region4_fn;
+-double pu_region1_fn(double T, void *user_data){
++MyDouble pu_region1_fn(MyDouble T, void *user_data){
+ 	return D->u - freesteam_region1_u_pT(D->p, T);
+ }
+-double pu_region2_fn(double T, void *user_data){
++MyDouble pu_region2_fn(MyDouble T, void *user_data){
+ 	return D->u - freesteam_region2_u_pT(D->p, T);
+ }
+-double pu_region4_fn(double x, void *user_data){
++MyDouble pu_region4_fn(MyDouble x, void *user_data){
+ 	return D->u - freesteam_region4_u_Tx(D->T, x);
+ }
+ #undef D
+ 
+-SteamState freesteam_set_pu(double p, double u){
+-	double lb, ub, tol, sol, err;
++SteamState freesteam_set_pu(MyDouble p, MyDouble u){
++	MyDouble lb, ub, tol, sol, err;
+ 	SolvePUData D = {p, u, 0.};
+ 	SteamState S;
+ 
+Index: freesteam-2.1/steam_pu.h
+===================================================================
+--- freesteam-2.1.orig/steam_pu.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pu.h	2013-06-27 08:50:19.000000000 +0200
+@@ -22,9 +22,9 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL int freesteam_region_pu(double p, double u);
++FREESTEAM_DLL int freesteam_region_pu(MyDouble p, MyDouble u);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_pu(double p, double u);
++FREESTEAM_DLL SteamState freesteam_set_pu(MyDouble p, MyDouble u);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_pv.c
+===================================================================
+--- freesteam-2.1.orig/steam_pv.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pv.c	2013-06-27 08:50:05.000000000 +0200
+@@ -34,7 +34,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-int freesteam_bounds_pv(double p, double v, int verbose){
++int freesteam_bounds_pv(MyDouble p, MyDouble v, int verbose){
+ #define BOUND_WARN(MSG) \
+ 	if(verbose){\
+ 		fprintf(stderr,"%s (%s:%d): WARNING " MSG " (p = %g MPa, v = %g m3/kg)\n"\
+@@ -50,13 +50,13 @@
+ 		return 2;
+ 	}
+ 
+-	double vmin = freesteam_region1_v_pT(p,IAPWS97_TMIN);
++	MyDouble vmin = freesteam_region1_v_pT(p,IAPWS97_TMIN);
+ 	if(v < vmin){
+ 		BOUND_WARN("v < v_region1(p,T_min)");
+ 		return 3;
+ 	}
+ 
+-	double vmax = freesteam_region2_v_pT(p,REGION2_TMAX);
++	MyDouble vmax = freesteam_region2_v_pT(p,REGION2_TMAX);
+ 	if(v>vmax){
+ 		BOUND_WARN("v > v_region2(p,T_max)");
+ 		return 4;
+@@ -66,35 +66,35 @@
+ #undef BOUND_WARN
+ }
+ 
+-int freesteam_region_pv(double p, double v){
++int freesteam_region_pv(MyDouble p, MyDouble v){
+ 
+-	double p13 = freesteam_region4_psat_T(REGION1_TMAX);
++	MyDouble p13 = freesteam_region4_psat_T(REGION1_TMAX);
+ 
+ 	if(p > p13){
+-		double v13 = freesteam_region1_v_pT(p, REGION1_TMAX);
++		MyDouble v13 = freesteam_region1_v_pT(p, REGION1_TMAX);
+ 		if(v < v13) return 1;
+ 
+ 		/* region 2-3 */
+-		double T23 = freesteam_b23_T_p(p);
+-		double v23 = freesteam_region2_v_pT(p,T23);
++		MyDouble T23 = freesteam_b23_T_p(p);
++		MyDouble v23 = freesteam_region2_v_pT(p,T23);
+ 		if(v > v23) return 2;
+ 
+ 		/* region 3? or high-pressure part of region 4? */
+ 		if(p >= IAPWS97_PCRIT) return 3;
+ 
+-		double Tsat = freesteam_region4_Tsat_p(p);
+-		double vf = 1./ freesteam_region4_rhof_T(Tsat);
++		MyDouble Tsat = freesteam_region4_Tsat_p(p);
++		MyDouble vf = 1./ freesteam_region4_rhof_T(Tsat);
+ 		if(v < vf) return 3;
+-		double vg = 1./ freesteam_region4_rhog_T(Tsat);
++		MyDouble vg = 1./ freesteam_region4_rhog_T(Tsat);
+ 		if(v > vg) return 3;
+ 
+ 		return 4;
+ 	}else{
+-		double Tsat = freesteam_region4_Tsat_p(p);
+-		double vf = freesteam_region1_v_pT(p,Tsat);
++		MyDouble Tsat = freesteam_region4_Tsat_p(p);
++		MyDouble vf = freesteam_region1_v_pT(p,Tsat);
+ 		if(v < vf) return 1;
+ 
+-		double vg = freesteam_region2_v_pT(p,Tsat);
++		MyDouble vg = freesteam_region2_v_pT(p,Tsat);
+ 		if(v > vg) return 2;
+ 
+ 		return 4;
+@@ -103,34 +103,34 @@
+ 
+ 
+ typedef struct SolvePVData_struct{
+-	double p, v;
++	MyDouble p, v;
+ } SolvePVData;
+ 
+ #define D ((SolvePVData *)user_data)
+ static ZeroInSubjectFunction pv_region1_fn;
+-double pv_region1_fn(double T, void *user_data){
++MyDouble pv_region1_fn(MyDouble T, void *user_data){
+ 	return D->v - freesteam_region1_v_pT(D->p, T);
+ }
+ 
+ static ZeroInSubjectFunction pv_region2_fn;
+-double pv_region2_fn(double T, void *user_data){
++MyDouble pv_region2_fn(MyDouble T, void *user_data){
+ 	return D->v - freesteam_region2_v_pT(D->p, T);
+ }
+ #undef D
+ 
+ typedef struct SolvePRhoData_struct{
+-	double p, rho;
++	MyDouble p, rho;
+ } SolvePRhoData;
+ 
+ #define D ((SolvePRhoData *)user_data)
+ static ZeroInSubjectFunction pv_region3_fn;
+-double pv_region3_fn(double T, void *user_data){
++MyDouble pv_region3_fn(MyDouble T, void *user_data){
+ 	return D->p - freesteam_region3_p_rhoT(D->rho, T);
+ }
+ #undef D
+ 
+ 
+-SteamState freesteam_set_pv(double p, double v){
++SteamState freesteam_set_pv(MyDouble p, MyDouble v){
+ 	SteamState S;
+ 	S.region = (char)freesteam_region_pv(p,v);
+ #if 0
+@@ -142,10 +142,10 @@
+ 			S.R1.p = p;
+ 			S.R1.T = freesteam_region4_Tsat_p(p);
+ 			{
+-				double lb = IAPWS97_TMIN;
+-				double ub = REGION1_TMAX;
+-				double tol = 1e-9; /* ??? */
+-				double sol, err;
++				MyDouble lb = IAPWS97_TMIN;
++				MyDouble ub = REGION1_TMAX;
++				MyDouble tol = 1e-9; /* ??? */
++				MyDouble sol, err;
+ 				SolvePVData D = {p, v};
+ 				zeroin_solve(&pv_region1_fn, &D, lb, ub, tol, &sol, &err);
+ 				S.R1.T = sol;
+@@ -163,10 +163,10 @@
+ 			S.R2.p = p;
+ 			S.R2.T = freesteam_region4_Tsat_p(p);
+ 			{
+-				double lb = IAPWS97_TMIN;
+-				double ub = IAPWS97_TMAX;
+-				double tol = 1e-9; /* ??? */
+-				double sol, err;
++				MyDouble lb = IAPWS97_TMIN;
++				MyDouble ub = IAPWS97_TMAX;
++				MyDouble tol = 1e-9; /* ??? */
++				MyDouble sol, err;
+ 				SolvePVData D = {p, v};
+ 				zeroin_solve(&pv_region2_fn, &D, lb, ub, tol, &sol, &err);
+ 				S.R2.T = sol;
+@@ -186,10 +186,10 @@
+ 			S.R3.rho = 1./ v;
+ 			S.R3.T = REGION1_TMAX;
+ 			{
+-				double lb = REGION1_TMAX;
+-				double ub = IAPWS97_TMAX;
+-				double tol = 1e-12; /* ??? */
+-				double sol, err;
++				MyDouble lb = REGION1_TMAX;
++				MyDouble ub = IAPWS97_TMAX;
++				MyDouble tol = 1e-12; /* ??? */
++				MyDouble sol, err;
+ 				SolvePRhoData D = {p, S.R3.rho};
+ 				zeroin_solve(&pv_region3_fn, &D, lb, ub, tol, &sol, &err);
+ 				S.R3.T = sol;
+@@ -206,7 +206,7 @@
+ 		case 4:
+ 			S.R4.T = freesteam_region4_Tsat_p(p);
+ 			//fprintf(stderr,"%s: region 4, Tsat = %g\n",__func__,S.R4.T);
+-			double vf, vg;
++			MyDouble vf, vg;
+ 			if(S.R4.T <= REGION1_TMAX){
+ 				vf = freesteam_region1_v_pT(p,S.R4.T);
+ 				vg = freesteam_region2_v_pT(p,S.R4.T);
+Index: freesteam-2.1/steam_pv.h
+===================================================================
+--- freesteam-2.1.orig/steam_pv.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_pv.h	2013-06-27 08:50:19.000000000 +0200
+@@ -22,11 +22,11 @@
+ #include "common.h"
+ #include "steam.h"
+ 
+-FREESTEAM_DLL int freesteam_bounds_pv(double p, double v, int verbose);
++FREESTEAM_DLL int freesteam_bounds_pv(MyDouble p, MyDouble v, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_pv(double p, double v);
++FREESTEAM_DLL int freesteam_region_pv(MyDouble p, MyDouble v);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_pv(double p, double v);
++FREESTEAM_DLL SteamState freesteam_set_pv(MyDouble p, MyDouble v);
+ 
+ #endif
+ 
+Index: freesteam-2.1/steam_uv.c
+===================================================================
+--- freesteam-2.1.orig/steam_uv.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_uv.c	2013-06-27 08:50:06.000000000 +0200
+@@ -36,7 +36,7 @@
+ 
+ /*-----------------required helper functions---------------*/
+ 
+-static double uf_p(double p){
++static MyDouble uf_p(MyDouble p){
+ 	Tsat = freesteam_region4_Tsat_p(p);
+ 	if(T < T13){
+ 		return freesteam_region1_u_pT(p, Tsat);
+@@ -45,7 +45,7 @@
+ 	}
+ }
+ 
+-static double ug_p(double p){
++static MyDouble ug_p(MyDouble p){
+ 	Tsat = freesteam_region4_Tsat_p(p);
+ 	if(T < T13){
+ 		return freesteam_region2_u_pT(p, Tsat);
+@@ -54,22 +54,22 @@
+ 	}
+ }
+ 
+-static double vf_u(double u){
++static MyDouble vf_u(MyDouble u){
+ 	/* zeroin for T such that uf(T) = u */	
+ 	return freesteam_region1_v_pT(psat(T), T);
+ }
+ 
+-static double ug_v(double v){
++static MyDouble ug_v(MyDouble v){
+ 	/* zeroin for T such that vg(T) = v */
+ 	return freesteam_region2_u_pT(psat(T), T)
+ }
+ 
+-static double u13_v(double v){
++static MyDouble u13_v(MyDouble v){
+ 	/* iterate on p to find v_pT(p, T13) = v */
+ 	return u_pT(p, T13)
+ }
+ 
+-static double u23_v(double v){
++static MyDouble u23_v(MyDouble v){
+ 	/* iterate on T to get freesteam_region2_v_pT(p23(T), T) = v */
+ 	return freesteam_region2_u_pT(p, T);
+ 
+@@ -78,25 +78,25 @@
+ 
+ /*-----------------main routines --------------------*/
+ 
+-int freesteam_bounds_uv(double u, double v, int verbose){
++int freesteam_bounds_uv(MyDouble u, MyDouble v, int verbose){
+ 
+ 	/* lower bound on u */
+-	double uf = uf_p(IAPWS97_PTRIPLE)
++	MyDouble uf = uf_p(IAPWS97_PTRIPLE)
+ 	if(u < uf){
+ 		return 1;
+ 	}
+ 
+-	double ug = ug_p(IAPWS97_PTRIPLE);
+-	double vf = vf_p(IAPWS97_PTRIPLE), vg = vg_p(IAPWS97_PTRIPLE);
++	MyDouble ug = ug_p(IAPWS97_PTRIPLE);
++	MyDouble vf = vf_p(IAPWS97_PTRIPLE), vg = vg_p(IAPWS97_PTRIPLE);
+ 	/* triple-point pressure line boundary for saturation region */
+ 	if(u < ug || v > vf){
+-		double v1 = vf + (vg - vf)*(u - uf)/(ug - uf);
++		MyDouble v1 = vf + (vg - vf)*(u - uf)/(ug - uf);
+ 		if(v > v1){
+ 			return 1;
+ 		}
+ 	}
+ 
+-	double v2 = freesteam_region2_v_pT(IAPWS97_PMAX, IAPWS97_TMAX);
++	MyDouble v2 = freesteam_region2_v_pT(IAPWS97_PMAX, IAPWS97_TMAX);
+ 	if(v > v2 && u > ug){
+ 			/* triple-point pressure line boundary for superheat region */
+ 			/* solve for T to give u,pmin --> check v */
+@@ -106,7 +106,7 @@
+ 		}
+ 	}
+ 
+-	double u2 = freesteam_region2_u_pT(IAPWS97_PMAX, IAPWS97_TMAX);
++	MyDouble u2 = freesteam_region2_u_pT(IAPWS97_PMAX, IAPWS97_TMAX);
+ 	if(u > u2 && v < v2){
+ 		return 2;
+ 	}
+@@ -134,7 +134,7 @@
+ 	/*     check u < u(Tmax, v) */
+ }
+ 
+-int freesteam_region_uv(double u, double v){
++int freesteam_region_uv(MyDouble u, MyDouble v){
+ 	
+ 	/* if u < u_crit */
+ 	/*     if v > vf(u) */
+@@ -153,12 +153,12 @@
+ 
+ }
+ 
+-SteamState freesteam_set_uv(double u, double v){
++SteamState freesteam_set_uv(MyDouble u, MyDouble v){
+ 
+ 	int region = /* work out the region */
+ 
+ 	if(region == 1){
+-		double vf = /* solved Tsat(u) */
++		MyDouble vf = /* solved Tsat(u) */
+ 		/* iterate on p, T to solve u, v */
+ 	}else if(region == 2){
+ 		/* two-way iteration with p,T to solve u,v */
+Index: freesteam-2.1/steam_uv.h
+===================================================================
+--- freesteam-2.1.orig/steam_uv.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/steam_uv.h	2013-06-27 08:50:21.000000000 +0200
+@@ -29,11 +29,11 @@
+ 	forms of your governing equations, if possible, perhaps for example through
+ 	the use of transformations such as those of the 'T dS' equations.
+ */
+-FREESTEAM_DLL int freesteam_bounds_uv(double u, double v, int verbose);
++FREESTEAM_DLL int freesteam_bounds_uv(MyDouble u, MyDouble v, int verbose);
+ 
+-FREESTEAM_DLL int freesteam_region_uv(double u, double v);
++FREESTEAM_DLL int freesteam_region_uv(MyDouble u, MyDouble v);
+ 
+-FREESTEAM_DLL SteamState freesteam_set_uv(double u, double v);
++FREESTEAM_DLL SteamState freesteam_set_uv(MyDouble u, MyDouble v);
+ 
+ #endif
+ 
+Index: freesteam-2.1/surftens.c
+===================================================================
+--- freesteam-2.1.orig/surftens.c	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/surftens.c	2013-06-27 08:50:06.000000000 +0200
+@@ -30,11 +30,11 @@
+ 	Substance, September 1994.
+ 	@since 0.7
+ */
+-double freesteam_surftens_T(double T){
+-	double tau = 1. - T / IAPWS97_TCRIT;
+-	const double B = 235.8e-3; /* converted to N/m */
+-	const double b = -0.625;
+-	const double mu = 1.256;
++MyDouble freesteam_surftens_T(MyDouble T){
++	MyDouble tau = 1. - T / IAPWS97_TCRIT;
++	const MyDouble B = 235.8e-3; /* converted to N/m */
++	const MyDouble b = -0.625;
++	const MyDouble mu = 1.256;
+ 
+ 	return B * pow(tau,mu) * (1 + b * tau);
+ }
+Index: freesteam-2.1/surftens.h
+===================================================================
+--- freesteam-2.1.orig/surftens.h	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/surftens.h	2013-06-27 08:50:21.000000000 +0200
+@@ -25,7 +25,7 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_surftens_T(double T);
++FREESTEAM_DLL MyDouble freesteam_surftens_T(MyDouble T);
+ 
+ #endif /* FREESTEAM_SURFTENS_H */
+ 
+Index: freesteam-2.1/test.c
+===================================================================
+--- freesteam-2.1.orig/test.c	2012-07-11 12:14:48.000000000 +0200
++++ freesteam-2.1/test.c	2013-06-27 08:50:07.000000000 +0200
+@@ -42,13 +42,13 @@
+ #include <assert.h>
+ 
+ int errorflag = 0;
+-double maxrelerr = 0;
++MyDouble maxrelerr = 0;
+ int verbose = 0;
+ 
+ #define CHECK_VAL(EXPR, VAL, RELTOL){ \
+-	double calc = (EXPR); \
+-	double error = calc - (VAL);\
+-	double relerr;\
++	MyDouble calc = (EXPR); \
++	MyDouble error = calc - (VAL);\
++	MyDouble relerr;\
+ 	relerr = (VAL==0) ? error : error / (VAL);\
+ 	if(fabs(relerr)>maxrelerr)maxrelerr=fabs(relerr);\
+ 	if(fabs(relerr) > RELTOL){\
+@@ -79,7 +79,7 @@
+ 
+ #define RELTOL 5e-9
+ 
+-void test_region1_point(double T,double p, double v,double h,double u, double s, double cp, double w){
++void test_region1_point(MyDouble T,MyDouble p, MyDouble v,MyDouble h,MyDouble u, MyDouble s, MyDouble cp, MyDouble w){
+ 
+ /*
+ 	Note: inputs to this function need units conversion!
+@@ -116,7 +116,7 @@
+   REGION 2: FORWARDS
+ */
+ 
+-void test_region2_point(double T,double p, double v,double h,double u, double s, double cp, double w){
++void test_region2_point(MyDouble T,MyDouble p, MyDouble v,MyDouble h,MyDouble u, MyDouble s, MyDouble cp, MyDouble w){
+ 
+ 	/* units of measurement as for region1 test */
+ 
+@@ -142,7 +142,7 @@
+   REGION 3: FORWARDS
+ */
+ 
+-void test_region3_point(double T,double rho, double p,double h,double u, double s, double cp, double w){
++void test_region3_point(MyDouble T,MyDouble rho, MyDouble p,MyDouble h,MyDouble u, MyDouble s, MyDouble cp, MyDouble w){
+ 
+ 	/* units of measurement as for region1 test */
+ 
+@@ -177,11 +177,11 @@
+   REGION 4 SATURATION LINE
+ */
+ 
+-void test_region4_point(double T,double p){
++void test_region4_point(MyDouble T,MyDouble p){
+ 	SteamState S = freesteam_region4_set_Tx(T,0.);
+-	double p1 = freesteam_p(S);
++	MyDouble p1 = freesteam_p(S);
+ 	CHECK_VAL(p1,p*1e6,RELTOL);
+-	double T1 = freesteam_region4_Tsat_p(p1);
++	MyDouble T1 = freesteam_region4_Tsat_p(p1);
+ 	CHECK_VAL(T1,T,RELTOL);
+ }
+ 
+@@ -196,8 +196,8 @@
+   REGION 1 BACKWARDS (P,H)
+ */
+ 
+-void test_region1_ph_point(double p,double h, double T){
+-	double T1 = freesteam_region1_T_ph(p*1e6,h*1e3);
++void test_region1_ph_point(MyDouble p,MyDouble h, MyDouble T){
++	MyDouble T1 = freesteam_region1_T_ph(p*1e6,h*1e3);
+ 	CHECK_VAL(T1,T,RELTOL);
+ }
+ 
+@@ -209,8 +209,8 @@
+ }
+ 
+ #if 0
+-void test_region1_ps_point(double p,double s, double T){
+-	double T1 = freesteam_region1_T_ps(p*1e6,s*1e3);
++void test_region1_ps_point(MyDouble p,MyDouble s, MyDouble T){
++	MyDouble T1 = freesteam_region1_T_ps(p*1e6,s*1e3);
+ 	CHECK_VAL(T1,T,RELTOL);
+ }
+ 
+@@ -227,8 +227,8 @@
+   REGION 2 BACKWARDS (P,H)
+ */
+ 
+-void test_region2_ph_point(double p,double h, double T){
+-	double T1 = freesteam_region2_T_ph(p*1e6,h*1e3);
++void test_region2_ph_point(MyDouble p,MyDouble h, MyDouble T){
++	MyDouble T1 = freesteam_region2_T_ph(p*1e6,h*1e3);
+ 	CHECK_VAL(T1,T,RELTOL);
+ }
+ 
+@@ -251,10 +251,10 @@
+   REGION 3 BACKWARDS (P,H)
+ */
+ 
+-void test_region3_ph_point(double p,double h, double T, double v){
+-	double T1 = freesteam_region3_T_ph(p*1e6,h*1e3);
++void test_region3_ph_point(MyDouble p,MyDouble h, MyDouble T, MyDouble v){
++	MyDouble T1 = freesteam_region3_T_ph(p*1e6,h*1e3);
+ 	CHECK_VAL(T1,T,RELTOL);
+-	double v1 = freesteam_region3_v_ph(p*1e6,h*1e3);
++	MyDouble v1 = freesteam_region3_v_ph(p*1e6,h*1e3);
+ 	CHECK_VAL(v1,v,RELTOL);
+ }
+ 
+@@ -273,8 +273,8 @@
+   REGION 3 PSAT(H)
+ */
+ 
+-void test_region3_psath_point(double h,double p){
+-	double p1 = freesteam_region3_psat_h(h*1e3);
++void test_region3_psath_point(MyDouble h,MyDouble p){
++	MyDouble p1 = freesteam_region3_psat_h(h*1e3);
+ 	CHECK_VAL(p1,p*1e6,RELTOL);
+ }
+ 
+@@ -289,8 +289,8 @@
+   REGION 3 PSAT(S)
+ */
+ 
+-void test_region3_psats_point(double s,double p){
+-	double p1 = freesteam_region3_psat_s(s*1e3);
++void test_region3_psats_point(MyDouble s,MyDouble p){
++	MyDouble p1 = freesteam_region3_psat_s(s*1e3);
+ 	CHECK_VAL(p1,p*1e6,RELTOL);
+ }
+ 
+@@ -306,12 +306,12 @@
+ */
+ 
+ void testb23(){
+-	double T = 623.15;
+-	double p = 0.165291643e8;
++	MyDouble T = 623.15;
++	MyDouble p = 0.165291643e8;
+ 	fprintf(stderr,"REGION 2-3 BOUNDARY TESTS\n");
+-	double p1 = freesteam_b23_p_T(T);
++	MyDouble p1 = freesteam_b23_p_T(T);
+ 	CHECK_VAL(p1,p,RELTOL);
+-	double T1 = freesteam_b23_T_p(p);
++	MyDouble T1 = freesteam_b23_T_p(p);
+ 	CHECK_VAL(T1,T,RELTOL);
+ }
+ 
+@@ -322,7 +322,7 @@
+ /* #define PHRELTOL 6e-5 ---region 2 */
+ #define PHRELTOL 1e-3 /* region 1 */
+ 
+-void test_steam_ph(double p,double h){
++void test_steam_ph(MyDouble p,MyDouble h){
+ 	//fprintf(stderr,"------------\n");
+ 	//fprintf(stderr,"p = %f MPa, h = %f kJ/kg\n",p, h);
+ 	SteamState S = freesteam_set_ph(p*1e6,h*1e3);
+@@ -334,11 +334,11 @@
+ };
+ 
+ void testph(void){
+-	const double pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 5, 10, 20, 22, 22.06, 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
+-	const int np = sizeof(pp)/sizeof(double);
+-	const double hh[] = {100, 300, 400, 450, 500, 800, 1000, 1500, 2000, 2107, 2108, 2109, 2500, 2600, 2650, 2700, 2800, 2900, 3000};
+-	const int nh = sizeof(hh)/sizeof(double);
+-	const double *p, *h;
++	const MyDouble pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 5, 10, 20, 22, 22.06, 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
++	const int np = sizeof(pp)/sizeof(MyDouble);
++	const MyDouble hh[] = {100, 300, 400, 450, 500, 800, 1000, 1500, 2000, 2107, 2108, 2109, 2500, 2600, 2650, 2700, 2800, 2900, 3000};
++	const int nh = sizeof(hh)/sizeof(MyDouble);
++	const MyDouble *p, *h;
+ 
+ 	fprintf(stderr,"FULL (P,H) TESTS\n");
+ 	for(p=pp; p<pp+np; ++p){
+@@ -357,7 +357,7 @@
+ #define R4RELTOL 4.3e-4
+ 
+ typedef struct R4TestProps_struct{
+-	double T, p, rhof, rhog, hf, hg, sf, sg;
++	MyDouble T, p, rhof, rhog, hf, hg, sf, sg;
+ } R4TestProps;
+ 
+ /**
+@@ -398,14 +398,14 @@
+   DERIVATIVE ROUTINES
+ */
+ 
+-void test_ph_derivs(double p, double h){
++void test_ph_derivs(MyDouble p, MyDouble h){
+ 	SteamState S;
+ 	S = freesteam_set_ph(p,h);
+ 	freesteam_fprint(stderr,S);
+ 
+ #if 1
+ 	if(S.region!=3)return;
+-	double dp = 1.;
++	MyDouble dp = 1.;
+ 	SteamState Sdp;
+ 	switch(S.region){
+ 		case 1: Sdp = freesteam_region1_set_pT(p+dp,freesteam_region1_T_ph(p+dp,h)); break;
+@@ -413,10 +413,10 @@
+ 		case 3: Sdp = freesteam_region3_set_rhoT(1./freesteam_region3_v_ph(p+dp,h),freesteam_region3_T_ph(p+dp,h)); break;
+ 		case 4: 
+ 			{
+-				double T1 = freesteam_region4_Tsat_p(p+dp);
+-				double hf = freesteam_region4_h_Tx(T1,0.);
+-				double hg = freesteam_region4_h_Tx(T1,1.);
+-				double x1 = (h - hf)/(hg - hg);
++				MyDouble T1 = freesteam_region4_Tsat_p(p+dp);
++				MyDouble hf = freesteam_region4_h_Tx(T1,0.);
++				MyDouble hg = freesteam_region4_h_Tx(T1,1.);
++				MyDouble x1 = (h - hf)/(hg - hg);
+ 				Sdp = freesteam_region4_set_Tx(T1,x1);
+ 			}
+ 			break;
+@@ -424,12 +424,12 @@
+ 	//fprintf(stderr,"S(p+dp = %g, h = %g) = ",p+dp,h);
+ 	//freesteam_fprint(stderr,Sdp);
+ 
+-	double dvdp_h_fdiff = (freesteam_v(Sdp) - freesteam_v(S))/dp;
+-	double dvdp_h = freesteam_deriv(S,"vph");
++	MyDouble dvdp_h_fdiff = (freesteam_v(Sdp) - freesteam_v(S))/dp;
++	MyDouble dvdp_h = freesteam_deriv(S,"vph");
+ 	CHECK_VAL(dvdp_h,dvdp_h_fdiff,1e-3);
+ #endif
+ 
+-	double dh = 1.;
++	MyDouble dh = 1.;
+ 	SteamState Sdh;
+ 	switch(S.region){
+ 		case 1: Sdh = freesteam_region1_set_pT(p,freesteam_region1_T_ph(p,h+dh)); break;
+@@ -437,9 +437,9 @@
+ 		case 3: Sdh = freesteam_region3_set_rhoT(1./freesteam_region3_v_ph(p,h+dh),freesteam_region3_T_ph(p,h+dh)); break;
+ 		case 4: 
+ 			{
+-				double hf = freesteam_region4_h_Tx(S.R4.T,0.);
+-				double hg = freesteam_region4_h_Tx(S.R4.T,1.);
+-				double x1 = ((h+dh) - hf)/(hg - hg);
++				MyDouble hf = freesteam_region4_h_Tx(S.R4.T,0.);
++				MyDouble hg = freesteam_region4_h_Tx(S.R4.T,1.);
++				MyDouble x1 = ((h+dh) - hf)/(hg - hg);
+ 				Sdh = freesteam_region4_set_Tx(S.R4.T,x1);
+ 			}
+ 	}
+@@ -447,9 +447,9 @@
+ 	//fprintf(stderr,"S(p+dp = %g, h = %g) = ",p+dp,h);
+ 	//freesteam_fprint(stderr,Sdp);
+ 
+-	double dvdh_p_fdiff = (freesteam_v(Sdh) - freesteam_v(S))/dh;
++	MyDouble dvdh_p_fdiff = (freesteam_v(Sdh) - freesteam_v(S))/dh;
+ 	
+-	double dvdh_p = freesteam_deriv(S,"vhp");
++	MyDouble dvdh_p = freesteam_deriv(S,"vhp");
+ 
+ 	CHECK_VAL(dvdh_p,dvdh_p_fdiff,1e-3);
+ 
+@@ -457,11 +457,11 @@
+ }
+ 
+ void testderivs(void){
+-	const double pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 5, 10, 20, 22, 22.06 , 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
+-	const int np = sizeof(pp)/sizeof(double);
+-	const double hh[] = {100, 300, 400, 450, 500, 800, 1000/*, 1500, 2000, 2107, 2108, 2109, 2200 2500, 2600, 2650, 2700, 2800, 2900, 3000*/};
+-	const int nh = sizeof(hh)/sizeof(double);
+-	const double *p, *h;
++	const MyDouble pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 5, 10, 20, 22, 22.06 , 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
++	const int np = sizeof(pp)/sizeof(MyDouble);
++	const MyDouble hh[] = {100, 300, 400, 450, 500, 800, 1000/*, 1500, 2000, 2107, 2108, 2109, 2200 2500, 2600, 2650, 2700, 2800, 2900, 3000*/};
++	const int nh = sizeof(hh)/sizeof(MyDouble);
++	const MyDouble *p, *h;
+ 	
+ 	fprintf(stderr,"DERIVATIVE ROUTINE TESTS\n");
+ 	for(p=pp; p<pp+np; ++p){
+@@ -476,12 +476,12 @@
+ */
+ 
+ typedef struct{
+-	double a,b,c;
++	MyDouble a,b,c;
+ } TestQuadratic;
+ 
+-double test_zeroin_subject(double x, void *user_data){
++MyDouble test_zeroin_subject(MyDouble x, void *user_data){
+ #define Q ((TestQuadratic *)user_data)
+-	double res = Q->a*x*x + Q->b*x + Q->c;
++	MyDouble res = Q->a*x*x + Q->b*x + Q->c;
+ 	//fprintf(stderr,"f(x = %f) = %f x² + %f x + %f = %f\n",x,Q->a,Q->b, Q->c,res);
+ 	return res;
+ #undef Q
+@@ -490,7 +490,7 @@
+ void testzeroin(void){
+ 	TestQuadratic Q1 = {1, 0, -4};
+ 	fprintf(stderr,"BRENT SOLVER TESTS\n");
+-	double sol = 0, err = 0;
++	MyDouble sol = 0, err = 0;
+ 	zeroin_solve(&test_zeroin_subject,&Q1, -10., 4.566, 1e-10, &sol, &err);
+ 	CHECK_VAL(sol,2.,1e-10);
+ }
+@@ -506,8 +506,8 @@
+ 	/* test in region 3 */
+ 	S = freesteam_region3_set_rhoT(IAPWS97_RHOCRIT, IAPWS97_TCRIT + 50.);
+ 	assert(S.region==3);
+-	double p = freesteam_p(S);
+-	double h = freesteam_h(S);
++	MyDouble p = freesteam_p(S);
++	MyDouble h = freesteam_h(S);
+ 	int status;
+ 	SteamState S2;
+ 	fprintf(stderr,"Solving for p = %g MPa, h = %g kJ/kgK (rho = %g, T = %g)\n",p/1e6, h/1e3,S.R3.rho, S.R3.T);
+@@ -556,7 +556,7 @@
+   FULL (P,T) ROUTINES
+ */
+ 
+-void test_point_pT(double p, double T){
++void test_point_pT(MyDouble p, MyDouble T){
+ 	SteamState S = freesteam_set_pT(p,T);
+ 	//fprintf(stderr,"region = %d\n",S.region);
+ 	CHECK_VAL(freesteam_p(S),p,1e-7);
+@@ -565,7 +565,7 @@
+ 
+ void testpT(void){
+ 	int np = 100, nT = 100;
+-	double p,T, dp = (IAPWS97_PMAX - 0.)/np, dT = (IAPWS97_TMAX - IAPWS97_TMIN)/nT;
++	MyDouble p,T, dp = (IAPWS97_PMAX - 0.)/np, dT = (IAPWS97_TMAX - IAPWS97_TMIN)/nT;
+ 	fprintf(stderr,"FULL (P,T) TESTS\n");
+ 	for(p = 0.; p <= IAPWS97_PMAX; p += dp){
+ 		for(T = IAPWS97_TMIN; T <= IAPWS97_TMAX; T += dT){
+@@ -578,10 +578,10 @@
+   REGION 3 (p,s) TEST DATA
+ */
+ 
+-void test_region3_ps_point(double p,double s, double T, double v){
+-	double T1 = freesteam_region3_T_ps(p*1e6,s*1e3);
++void test_region3_ps_point(MyDouble p,MyDouble s, MyDouble T, MyDouble v){
++	MyDouble T1 = freesteam_region3_T_ps(p*1e6,s*1e3);
+ 	CHECK_VAL(T1,T,RELTOL);
+-	double v1 = freesteam_region3_v_ps(p*1e6,s*1e3);
++	MyDouble v1 = freesteam_region3_v_ps(p*1e6,s*1e3);
+ 	CHECK_VAL(v1,v,RELTOL);
+ 
+ 	//SteamState S = freesteam_set_ps(p*1e6,s*1e3);
+@@ -607,7 +607,7 @@
+ /* #define PHRELTOL 6e-5 ---region 2 */
+ #define PHRELTOL 1e-3 /* region 1 */
+ 
+-void test_steam_ps(double p,double s){
++void test_steam_ps(MyDouble p,MyDouble s){
+ 	//fprintf(stderr,"------------\n");
+ 	//fprintf(stderr,"%s: p = %f MPa, s = %f kJ/kgK\n",__func__, p, s);
+ 	freesteam_bounds_ps(p*1e6,s*1e3,1);
+@@ -621,11 +621,11 @@
+ };
+ 
+ void testps(void){
+-	const double pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 3, 5, 10, 17, 18, 20, 22, 22.06, 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
+-	const int np = sizeof(pp)/sizeof(double);
+-	const double ss[] = {0.01,1,2,3,3.5,4,5,6,7,8,9,10,11,12};
+-	const int ns = sizeof(ss)/sizeof(double);
+-	const double *p, *s;
++	const MyDouble pp[] = {0.001, 0.0035, 0.01, 0.1, 1, 2, 3, 5, 10, 17, 18, 20, 22, 22.06, 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100};
++	const int np = sizeof(pp)/sizeof(MyDouble);
++	const MyDouble ss[] = {0.01,1,2,3,3.5,4,5,6,7,8,9,10,11,12};
++	const int ns = sizeof(ss)/sizeof(MyDouble);
++	const MyDouble *p, *s;
+ 
+ 	fprintf(stderr,"FULL (P,S) TESTS\n");
+ 	for(p=pp; p<pp+np; ++p){
+@@ -641,7 +641,7 @@
+   FULL (T,S) ROUTINES
+ */
+ 
+-void test_steam_Ts(double T,double s){
++void test_steam_Ts(MyDouble T,MyDouble s){
+ 	//fprintf(stderr,"------------\n");
+ 	//fprintf(stderr,"%s: T = %f K, s = %f kJ/kgK\n",__func__, T, s);
+ 	freesteam_bounds_Ts(T,s*1e3,1);
+@@ -654,14 +654,14 @@
+ };
+ 
+ void testTs(void){
+-	const double TT[] = {273.15, 276.15, 283.15, 300, 400, 500, 600, 621
++	const MyDouble TT[] = {273.15, 276.15, 283.15, 300, 400, 500, 600, 621
+ 		, REGION1_TMAX, 630, 647, IAPWS97_TCRIT, 648, 680, 700,800,900
+ 		, 1000,1073.15
+ 	};
+-	const int nT = sizeof(TT)/sizeof(double);
+-	const double ss[] = {0,0.01,1,2,3,3.5,4,5,6,7,8,9,10,11,12};
+-	const int ns = sizeof(ss)/sizeof(double);
+-	const double *T, *s;
++	const int nT = sizeof(TT)/sizeof(MyDouble);
++	const MyDouble ss[] = {0,0.01,1,2,3,3.5,4,5,6,7,8,9,10,11,12};
++	const int ns = sizeof(ss)/sizeof(MyDouble);
++	const MyDouble *T, *s;
+ 
+ 	fprintf(stderr,"FULL (T,S) TESTS\n");
+ 	int n = 0;
+@@ -681,7 +681,7 @@
+ 
+ #define PVRELTOL 1.e-8
+ 
+-void test_steam_pv(double p,double v){
++void test_steam_pv(MyDouble p,MyDouble v){
+ 	//fprintf(stderr,"------------\n");
+ 	//fprintf(stderr,"%s: p = %f MPa, v = %f m3/kg\n",__func__, p, v);
+ 	freesteam_bounds_pv(p*1e6,v,1);
+@@ -694,13 +694,13 @@
+ };
+ 
+ void testpv(void){
+-	const double pp[] = {1e-5, 2e-5, 5e-5, 1e-4, 5e-4, 0.001, 0.0035, 0.01, 0.1, 1, 2, 3, 5, 8, 10, 12, 17, 18, 20, 22, 22.06
++	const MyDouble pp[] = {1e-5, 2e-5, 5e-5, 1e-4, 5e-4, 0.001, 0.0035, 0.01, 0.1, 1, 2, 3, 5, 8, 10, 12, 17, 18, 20, 22, 22.06
+ 		, 22.064, 22.07, 23, 25, 30, 40, 50, 80, 90, 100
+ 	};
+-	const int np = sizeof(pp)/sizeof(double);
+-	const double vv[] = {0.0009, 0.001, 0.0012, 0.0014, 0.0017, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.06, 0.1, 0.2};
+-	const int nv = sizeof(vv)/sizeof(double);
+-	const double *p, *v;
++	const int np = sizeof(pp)/sizeof(MyDouble);
++	const MyDouble vv[] = {0.0009, 0.001, 0.0012, 0.0014, 0.0017, 0.002, 0.003, 0.004, 0.005, 0.01, 0.02, 0.03, 0.04, 0.06, 0.1, 0.2};
++	const int nv = sizeof(vv)/sizeof(MyDouble);
++	const MyDouble *p, *v;
+ 
+ 	fprintf(stderr,"FULL (P,V) TESTS\n");
+ 	int n = 0;
+@@ -724,20 +724,20 @@
+ void testTx(void){
+ 	SteamState S;
+ 
+-	const double xx[] = {-1, -2, -1e-6, 0, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.3, 0.5, 0.7
++	const MyDouble xx[] = {-1, -2, -1e-6, 0, 1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1, 0.3, 0.5, 0.7
+ 		, 0.9, 0.99, 0.999, 0.9999, 0.99999, 0.999999, 1, 1.00000001, 1.1, 2, 5
+ 	};
+-	const int nx = sizeof(xx)/sizeof(double);
++	const int nx = sizeof(xx)/sizeof(MyDouble);
+ 
+-	const double TT[] = {273.15, 273.16, 273.2, 274, 280, 290, 300, 310, 350
++	const MyDouble TT[] = {273.15, 273.16, 273.2, 274, 280, 290, 300, 310, 350
+ 		, 400, 450, 500, 550, 600, 620, 630, 640, 645, 647, 647.09, IAPWS97_TCRIT
+ 		, 647.1, 650, 700, 800, 900, 1000, 1073.15
+ 	};
+-	const int nT = sizeof(TT)/sizeof(double);
++	const int nT = sizeof(TT)/sizeof(MyDouble);
+ 
+ 	fprintf(stderr,"FULL (T,X) TESTS\n");
+ 
+-	const double *x,*T;
++	const MyDouble *x,*T;
+ 	int n = 0;
+ 	for(x = xx; x < xx+nx; ++x){
+ 		for(T = TT; T < TT+nT; ++T){
+@@ -759,8 +759,8 @@
+ 
+ #define MURELTOL 1e-6
+ 
+-void test_viscosity_rhoT_point(double rho, double T, double mu){
+-	double mu1 = freesteam_mu_rhoT(rho,T)*1e6; // compare in microPascal-s
++void test_viscosity_rhoT_point(MyDouble rho, MyDouble T, MyDouble mu){
++	MyDouble mu1 = freesteam_mu_rhoT(rho,T)*1e6; // compare in microPascal-s
+ 	CHECK_VAL(mu1,mu,MURELTOL);
+ }
+ 
+@@ -788,7 +788,7 @@
+ 	@param p pressure/[MPa]
+ 	@param T temperature/[°C]
+ */
+-void test_k_pT_point(double p, double T, double k){
++void test_k_pT_point(MyDouble p, MyDouble T, MyDouble k){
+ #if 0
+ 	fprintf(stderr,"\n\np = %f MPa, T = %f °C, expect k = %f mW/m·K\n", p, T, k);
+ #endif
+@@ -801,7 +801,7 @@
+ 	fprintf(stderr,"rho = %f\n", freesteam_rho(S));
+ #endif
+ 
+-	double k1 = freesteam_k_rhoT(freesteam_rho(S),T + 273.15) * 1.e3; // compare in mW/m·K
++	MyDouble k1 = freesteam_k_rhoT(freesteam_rho(S),T + 273.15) * 1.e3; // compare in mW/m·K
+ 
+ #if 0
+ 	fprintf(stderr,"===> error = %f mW/m·K\n", k1 - k);
+@@ -815,11 +815,11 @@
+ 
+ #define P_COUNT 29
+ #define T_COUNT 22
+-	const double p_raw[P_COUNT]={0.1, 0.5, 1, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
++	const MyDouble p_raw[P_COUNT]={0.1, 0.5, 1, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100};
+ 
+-	const double T_raw[T_COUNT]={0, 25, 50, 75, 100, 150, 200, 250, 300, 350, 375, 400, 425, 450, 475, 500, 550, 600, 650, 700, 750, 800};
++	const MyDouble T_raw[T_COUNT]={0, 25, 50, 75, 100, 150, 200, 250, 300, 350, 375, 400, 425, 450, 475, 500, 550, 600, 650, 700, 750, 800};
+ 
+-	const double k[T_COUNT][P_COUNT]={
++	const MyDouble k[T_COUNT][P_COUNT]={
+ 		{562,562.3,562.6,563.4,564.9,566.4,567.8,569.3,570.8,572.2, 573.6,575.1,576.5,577.9,579.3,582.1,584.9,587.6,590.3,593,595.7,598.3,600.9,603.5,606.1,608.6,611.1,613.6,616}
+ 		,{607.5,607.7,608,608.8,610.1,611.4,612.7,614.1,615.4,616.7, 617.9,619.2,620.5,621.8,623.1,625.6,628.1,630.6,633,635.5,637.9,640.3,642.6,645,647.3,649.6,651.9,654.2,656.4}
+ 		,{640.5,640.7,641,641.7,643,644.3,645.6,646.9,648.1,649.4,650.6, 651.9,653.1,654.4,655.6,658,660.4,662.8,665.2,667.6,669.9,672.2,674.5,676.8,679,681.3,683.5,685.7,687.8}
+@@ -860,7 +860,7 @@
+ */
+ 
+ typedef struct{
+-	double T, sigma;
++	MyDouble T, sigma;
+ } SurfTensData;
+ 
+ void testsurftens(void){
+@@ -948,8 +948,8 @@
+ 
+ 	int i;
+ 	for(i=0; i<SURFTENS_COUNT; ++i){
+-		double sig = td[i].sigma * 1e-3;
+-		double sig1 = freesteam_surftens_T(td[i].T + 273.15);
++		MyDouble sig = td[i].sigma * 1e-3;
++		MyDouble sig1 = freesteam_surftens_T(td[i].T + 273.15);
+ 		CHECK_VAL(sig1, sig, SURFTENS_RELTOL);
+ 	}
+ }
+Index: freesteam-2.1/thcond.c
+===================================================================
+--- freesteam-2.1.orig/thcond.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/thcond.c	2013-06-27 08:50:07.000000000 +0200
+@@ -48,24 +48,24 @@
+ #define THCOND_d4 -1.0200
+ 
+ /* freesteam code */
+-double freesteam_k_rhoT(double rho, double T){
++MyDouble freesteam_k_rhoT(MyDouble rho, MyDouble T){
+ 
+ #define THCOND_a_COUNT 4
+-	const double THCOND_a[THCOND_a_COUNT] = {
++	const MyDouble THCOND_a[THCOND_a_COUNT] = {
+ 		0.0102811
+ 		,0.0299621
+ 		,0.0156146
+ 		,-0.00422464
+ 	};
+ 
+-	double Tbar = T / THCOND_TSTAR;
+-	double rhobar = rho / THCOND_RHOSTAR;
++	MyDouble Tbar = T / THCOND_TSTAR;
++	MyDouble rhobar = rho / THCOND_RHOSTAR;
+ 
+ 	/* fast implementation... minimised calls to 'pow' routine... */
+ 
+-	double Troot = sqrt(Tbar);
+-	double Tpow = Troot;
+-	double lam = 0;
++	MyDouble Troot = sqrt(Tbar);
++	MyDouble Tpow = Troot;
++	MyDouble lam = 0;
+ 
+ 	int k;
+ 	for(k = 0; k < THCOND_a_COUNT; ++k) {
+@@ -75,19 +75,19 @@
+ 
+ 	lam += THCOND_b0 + THCOND_b1 * rhobar + THCOND_b2 * exp(THCOND_B1 * SQ(rhobar + THCOND_B2));
+ 	
+-	double DTbar = fabs(Tbar - 1) + THCOND_C4;
+-	double DTbarpow = pow(DTbar, 3./5);
+-	double Q = 2. + THCOND_C5 / DTbarpow;
++	MyDouble DTbar = fabs(Tbar - 1) + THCOND_C4;
++	MyDouble DTbarpow = pow(DTbar, 3./5);
++	MyDouble Q = 2. + THCOND_C5 / DTbarpow;
+ 
+-	double S;
++	MyDouble S;
+ 	if(Tbar >= 1){
+ 		S = 1. / DTbar;
+ 	}else{
+ 		S = THCOND_C6 / DTbarpow;
+ 	}
+ 
+-	double rhobar18 = pow(rhobar, 1.8);
+-	double rhobarQ = pow(rhobar, Q);
++	MyDouble rhobar18 = pow(rhobar, 1.8);
++	MyDouble rhobarQ = pow(rhobar, Q);
+ 
+ 	lam += 
+ 		(THCOND_d1 / ipow(Tbar,10) + THCOND_d2) * rhobar18 * 
+Index: freesteam-2.1/thcond.h
+===================================================================
+--- freesteam-2.1.orig/thcond.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/thcond.h	2013-06-27 08:50:22.000000000 +0200
+@@ -32,7 +32,7 @@
+ 
+ 	@return Thermal conductivity [W/m.K]
+ */
+-FREESTEAM_DLL double freesteam_k_rhoT(double rho, double T);
++FREESTEAM_DLL MyDouble freesteam_k_rhoT(MyDouble rho, MyDouble T);
+ 
+ #endif
+ 
+Index: freesteam-2.1/viscosity.c
+===================================================================
+--- freesteam-2.1.orig/viscosity.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/viscosity.c	2013-06-27 08:50:08.000000000 +0200
+@@ -24,18 +24,18 @@
+ #define FREESTEAM_BUILDING_LIB
+ #include "viscosity.h"
+ 
+-static double mu0(double tau);
+-static double mu1(double del, double tau);
++static MyDouble mu0(MyDouble tau);
++static MyDouble mu1(MyDouble del, MyDouble tau);
+ 
+ #define VISCOSITY_MUSTAR 1.0e-6 /* Pa-s */
+ 
+ #include <math.h>
+ 
+-static double mu0(double tau){
++static MyDouble mu0(MyDouble tau){
+     // viscosity in the dilute-gas limit
+-    const double H[4] = {1.67752, 2.20462, 0.6366564, -0.241605};
++    const MyDouble H[4] = {1.67752, 2.20462, 0.6366564, -0.241605};
+     int i;
+-    double sum = 0;
++    MyDouble sum = 0;
+     for (i = 0; i < 4; i++){
+         sum += H[i] * ipow(tau, i) ;
+     }
+@@ -44,9 +44,9 @@
+ 
+ 
+ 
+-static double mu1(double del, double tau){
++static MyDouble mu1(MyDouble del, MyDouble tau){
+     // contribution to viscosity due to finite density
+-    const double H[6][7] = {
++    const MyDouble H[6][7] = {
+         { 5.20094E-1, 2.22531E-1, -2.81378E-1, 1.61913E-1, -3.25372E-2, 0.0,         0.0},
+         { 8.50895E-2, 9.99115E-1, -9.06851E-1, 2.57399E-1,  0.0,        0.0,         0.0},
+         {-1.08374,    1.88797,    -7.72479E-1, 0.0,         0.0,        0.0,         0.0},
+@@ -56,8 +56,8 @@
+     };
+ 	
+     int i, j;
+-    double sum = 0;
+-	double tau1 = 0;
++    MyDouble sum = 0;
++	MyDouble tau1 = 0;
+     for (i = 0; i < 6; i++){
+ 		tau1 = ipow(tau - 1, i);
+         for (j = 0; j < 7; j++){
+@@ -68,9 +68,9 @@
+     return exp(del * sum);
+ }
+ 
+-double freesteam_mu_rhoT(double rho, double T){
+-	double del = rho / IAPWS97_RHOCRIT;
+-	double tau = IAPWS97_TCRIT / T;
++MyDouble freesteam_mu_rhoT(MyDouble rho, MyDouble T){
++	MyDouble del = rho / IAPWS97_RHOCRIT;
++	MyDouble tau = IAPWS97_TCRIT / T;
+ 
+     const int mu2 = 1; // critical enhancement to viscosity not implemented for IF-97, set to 1
+ 	return VISCOSITY_MUSTAR * mu0(tau) * mu1(del,tau) * mu2;
+Index: freesteam-2.1/viscosity.h
+===================================================================
+--- freesteam-2.1.orig/viscosity.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/viscosity.h	2013-06-27 08:50:22.000000000 +0200
+@@ -26,6 +26,6 @@
+ 
+ #include "common.h"
+ 
+-FREESTEAM_DLL double freesteam_mu_rhoT(double rho, double T);
++FREESTEAM_DLL MyDouble freesteam_mu_rhoT(MyDouble rho, MyDouble T);
+ 
+ #endif
+Index: freesteam-2.1/zeroin.c
+===================================================================
+--- freesteam-2.1.orig/zeroin.c	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/zeroin.c	2013-06-27 08:50:08.000000000 +0200
+@@ -27,12 +27,12 @@
+ 	#define DBL_EPSILON 2e-16
+ #endif
+ 
+-char zeroin_solve(ZeroInSubjectFunction *func, void *user_data, double lowerbound, double upperbound, double tol, double *solution, double *error){
++char zeroin_solve(ZeroInSubjectFunction *func, void *user_data, MyDouble lowerbound, MyDouble upperbound, MyDouble tol, MyDouble *solution, MyDouble *error){
+ 
+-    double a, b, c;	///<  Abscissae, descr. see above.
+-    double fa;      ///<  f(a)
+-    double fb;      ///<  f(b)
+-    double fc;      ///<  f(c)
++    MyDouble a, b, c;	///<  Abscissae, descr. see above.
++    MyDouble fa;      ///<  f(a)
++    MyDouble fb;      ///<  f(b)
++    MyDouble fc;      ///<  f(c)
+ 
+     a = lowerbound;
+     b = upperbound;
+@@ -51,11 +51,11 @@
+     //  Main iteration loop
+ 
+     for (;;) {
+-	    double prev_step = b - a;    ///<  Distance from the last but one to the last approximation
+-	    double tol_act;              ///<  Actual tolerance
+-	    double p;                    ///<  Interpolation step is calculated in the form p/q; division
+-	    double q;                    ///<  operations is delayed until the last moment
+-	    double new_step;             ///<  Step at this iteration
++	    MyDouble prev_step = b - a;    ///<  Distance from the last but one to the last approximation
++	    MyDouble tol_act;              ///<  Actual tolerance
++	    MyDouble p;                    ///<  Interpolation step is calculated in the form p/q; division
++	    MyDouble q;                    ///<  operations is delayed until the last moment
++	    MyDouble new_step;             ///<  Step at this iteration
+ 
+ 	    if (fabs(fc) < fabs(fb)) {
+ 		    a = b;
+@@ -83,8 +83,8 @@
+ 	    if (fabs(prev_step) >= tol_act   // If prev_step was large enough and was in true direction,
+ 	        && fabs(fa) > fabs(fb))      // Interpolatiom may be tried
+ 	    {
+-		    register double t1, t2;
+-		    double cb;
++		    register MyDouble t1, t2;
++		    MyDouble cb;
+ 
+ 		    cb = c - b;
+ 		    if (a == c) {
+Index: freesteam-2.1/zeroin.h
+===================================================================
+--- freesteam-2.1.orig/zeroin.h	2010-07-05 20:12:58.000000000 +0200
++++ freesteam-2.1/zeroin.h	2013-06-27 08:50:22.000000000 +0200
+@@ -31,15 +31,15 @@
+ 	necesssary parameter data, for example:
+ 
+ 	-- in your main code
+-	typedef struct{double param1, param2} MyData;
++	typedef struct{MyDouble param1, param2} MyData;
+ 	MyData D = {100., 3.141};
+-	double myfunc(double x, void *user_data){
++	MyDouble myfunc(MyDouble x, void *user_data){
+ 		MyData *D1 = (MyData *)user_data;
+ 		return x * D1->param1 + D1->param2;
+ 	}
+ 	zeroin_solve(&myfunc, &D, ...);
+ */
+-typedef double ZeroInSubjectFunction(double, void *user_data);
++typedef MyDouble ZeroInSubjectFunction(MyDouble, void *user_data);
+ 
+ /**
+ 	Attempt to solve the function y = f(x) = 0 by varying x between
+@@ -59,7 +59,7 @@
+ 	@return 0 on success
+ */
+ 
+-FREESTEAM_DLL char zeroin_solve(ZeroInSubjectFunction *func, void *user_data, double lowerbound, double upperbound, double tol, double *solution, double *error);
++FREESTEAM_DLL char zeroin_solve(ZeroInSubjectFunction *func, void *user_data, MyDouble lowerbound, MyDouble upperbound, MyDouble tol, MyDouble *solution, MyDouble *error);
+ 
+ #endif
+ 
